@@ -82,7 +82,6 @@ export default function LiveTiming() {
   };
 
   const resetDistance = async (d) => {
-    if (!window.confirm(`Nollställa starttiden för ${d}? (Sparade sluttider påverkas inte.)`)) return;
     try {
       await api.post("/admin/timing/reset", { distance: d });
       setTiming((prev) => ({ ...prev, [d]: null }));
@@ -91,6 +90,8 @@ export default function LiveTiming() {
         runners.filter((r) => r.distance === d).forEach((r) => delete copy[r.bib_number]);
         return copy;
       });
+      setRunners((prev) => prev.map((x) => (x.distance === d ? { ...x, finish_time: null, finish_seconds: null } : x)));
+      toast.success(`${d} nollställd.`);
     } catch (err) { toast.error(formatApiErrorDetail(err.response?.data?.detail)); }
   };
 
@@ -226,11 +227,29 @@ export default function LiveTiming() {
                     <button onClick={() => startDistance(d)} data-testid={`start-${d.replace(" ", "")}`} className="inline-flex items-center gap-2 rounded-sm bg-brand-moss px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-brand-forest">
                       <Play size={15} /> {started ? "Starta om" : "Starta"}
                     </button>
-                    {started && (
-                      <button onClick={() => resetDistance(d)} data-testid={`reset-${d.replace(" ", "")}`} className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-brand-forest transition-colors hover:bg-brand-sand">
-                        <RotateCcw size={15} /> Nollställ
-                      </button>
-                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button data-testid={`reset-${d.replace(" ", "")}`} className="inline-flex items-center gap-2 rounded-sm border border-destructive/40 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-destructive transition-colors hover:bg-destructive hover:text-white">
+                          <RotateCcw size={15} /> Nollställ
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent data-testid={`reset-${d.replace(" ", "")}-dialog`}>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="text-destructive" size={20} /> Nollställ {d}?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Detta nollställer <span className="font-bold text-brand-forest">starttiden för {d}</span> och raderar <span className="font-bold text-brand-forest">sluttiderna för denna distans</span>. Övriga distanser påverkas inte. Åtgärden går <span className="font-bold text-destructive">inte att ångra</span>.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel data-testid={`reset-${d.replace(" ", "")}-cancel`}>Avbryt</AlertDialogCancel>
+                          <AlertDialogAction data-testid={`reset-${d.replace(" ", "")}-confirm`} onClick={() => resetDistance(d)} className="bg-destructive text-white hover:bg-destructive/90">
+                            Ja, nollställ {d}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
 

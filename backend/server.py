@@ -385,6 +385,7 @@ async def reset_timing(body: TimingActionRequest, user: dict = Depends(get_curre
     if body.distance not in DISTANCES:
         raise HTTPException(status_code=400, detail="Ogiltig distans.")
     await db.timing.update_one({"distance": body.distance}, {"$set": {"start_time": None}}, upsert=True)
+    await db.registrations.update_many({"distance": body.distance}, {"$set": {"finish_time": None, "finish_seconds": None}})
     return {"distance": body.distance, "start_time": None}
 
 
