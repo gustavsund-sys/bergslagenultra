@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { api, formatApiErrorDetail, LOGO_URL } from "@/lib/api";
 import { toast } from "sonner";
-import { LogOut, ArrowLeft, Play, RotateCcw, Flag, Zap, X } from "lucide-react";
+import { LogOut, ArrowLeft, Play, RotateCcw, Flag, X } from "lucide-react";
 
 const fmt = (s) => {
   if (s == null) return "--:--:--";
@@ -67,17 +67,6 @@ export default function LiveTiming() {
       const { data } = await api.post("/admin/timing/start", { distance: d });
       setTiming((prev) => ({ ...prev, [d]: data.start_time }));
       toast.success(`${d} startad!`);
-    } catch (err) { toast.error(formatApiErrorDetail(err.response?.data?.detail)); }
-  };
-
-  const startAll = async () => {
-    if (Object.values(timing).some(Boolean) && !window.confirm("Detta startar (eller startar om) tiden för ALLA distanser samtidigt. Fortsätt?")) return;
-    try {
-      const { data } = await api.post("/admin/timing/start-all");
-      const next = {};
-      DISTANCES.forEach((d) => (next[d] = data.start_time));
-      setTiming(next);
-      toast.success("Alla distanser startade samtidigt!");
     } catch (err) { toast.error(formatApiErrorDetail(err.response?.data?.detail)); }
   };
 
@@ -154,14 +143,12 @@ export default function LiveTiming() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4">
           <div>
             <span className="text-sm font-bold uppercase tracking-[0.25em] text-brand">Funktionär</span>
             <h1 className="mt-1 font-display text-3xl font-black uppercase tracking-tight text-brand-forest sm:text-4xl">Tidtagning</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Varje distans har sin egen starttid – starta dem var för sig nedan.</p>
           </div>
-          <button onClick={startAll} data-testid="start-all" className="inline-flex items-center justify-center gap-2 rounded-sm bg-brand px-6 py-4 text-sm font-bold uppercase tracking-wide text-white shadow-[3px_3px_0px_rgba(26,36,33,0.5)] transition-all hover:-translate-y-0.5 hover:bg-brand-hover">
-            <Zap size={18} /> Starta alla distanser samtidigt
-          </button>
         </div>
 
         <div className="mt-4 rounded-md border border-border bg-white p-4 text-sm text-muted-foreground">
