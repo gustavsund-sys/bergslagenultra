@@ -206,7 +206,7 @@ async def login(body: LoginRequest, response: Response):
     email = body.email.lower()
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(body.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Fel e-post eller lösenord.")
+        raise HTTPException(status_code=401, detail="Fel användarnamn eller lösenord.")
     token = create_access_token(str(user["_id"]), email)
     response.set_cookie(key="access_token", value=token, httponly=True, secure=True,
                         samesite="none", max_age=43200, path="/")
