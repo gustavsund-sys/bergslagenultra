@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { api, formatApiErrorDetail, LOGO_URL } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { LogOut, Search, Timer, CheckCircle2, Trash2, Clock } from "lucide-react";
+import { LogOut, Search, Timer, CheckCircle2, Trash2, Clock, Tag, Monitor } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -92,9 +92,17 @@ export default function AdminDashboard() {
               <div className="text-[11px] text-white/50">{user?.email}</div>
             </div>
           </div>
-          <button onClick={doLogout} data-testid="admin-logout" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10">
-            <LogOut size={15} /> Logga ut
-          </button>
+          <div className="flex items-center gap-2">
+            <Link to="/admin/startnummer" data-testid="nav-startnummer" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10">
+              <Tag size={15} /> <span className="hidden sm:inline">Startnummer</span>
+            </Link>
+            <a href="/live" target="_blank" rel="noreferrer" data-testid="nav-live" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10">
+              <Monitor size={15} /> <span className="hidden sm:inline">Livetavla</span>
+            </a>
+            <button onClick={doLogout} data-testid="admin-logout" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10">
+              <LogOut size={15} /> <span className="hidden sm:inline">Logga ut</span>
+            </button>
+          </div>
         </div>
       </header>
 

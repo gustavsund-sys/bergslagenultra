@@ -43,8 +43,8 @@ export default function AdminLogin() {
 
         <form onSubmit={submit} className="mt-8 space-y-5" data-testid="admin-login-form">
           <div>
-            <Label htmlFor="email" className="text-xs font-bold uppercase tracking-[0.2em]">E-post</Label>
-            <Input id="email" type="email" data-testid="login-email" className="mt-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="funktionar@exempel.se" />
+            <Label htmlFor="email" className="text-xs font-bold uppercase tracking-[0.2em]">Användarnamn</Label>
+            <Input id="email" type="text" data-testid="login-email" className="mt-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin" />
           </div>
           <div>
             <Label htmlFor="password" className="text-xs font-bold uppercase tracking-[0.2em]">Lösenord</Label>

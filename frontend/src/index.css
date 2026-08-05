@@ -67,3 +67,20 @@ body {
 .animate-fade-up { animation: fadeUp 0.6s ease-out both; }
 
 ::selection { background: #FF5A00; color: #fff; }
+
+@media print {
+    header, footer, .no-print { display: none !important; }
+    .print-area { padding: 0 !important; }
+    body { background: #fff !important; }
+    @page { margin: 12mm; }
+}
+
+.bib-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+@media print {
+    .bib-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .bib-card { break-inside: avoid; }
+}

@@ -21,6 +21,7 @@ export const Footer = () => (
           <li><Link to="/anmalan" className="hover:text-brand">Anmälan</Link></li>
           <li><Link to="/startlista" className="hover:text-brand">Startlista</Link></li>
           <li><Link to="/resultat" className="hover:text-brand">Resultat</Link></li>
+          <li><Link to="/live" className="hover:text-brand">Livetavla</Link></li>
           <li><Link to="/admin/login" className="hover:text-brand">Funktionär</Link></li>
         </ul>
       </div>

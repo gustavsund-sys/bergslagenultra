@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { PublicLayout } from "@/components/PublicLayout";
 import { api } from "@/lib/api";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trophy, Medal } from "lucide-react";
+import { Trophy, Medal, Download, Printer } from "lucide-react";
 
 const RESULTS_HERO =
   "https://images.unsplash.com/photo-1667781838690-5f32ea0ccea6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHw0fHxydW5uaW5nJTIwcmFjZSUyMGZpbmlzaCUyMGxpbmV8ZW58MHx8fHwxNzg1OTE4MDQ4fDA&ixlib=rb-4.1.0&q=85";
@@ -23,6 +23,26 @@ export default function Results() {
 
   const distances = data?.distances || [];
 
+  const exportCsv = () => {
+    if (!data) return;
+    const rows = [["Distans", "Placering", "Nr", "Namn", "Klubb", "Nation", "Tid"]];
+    distances.forEach((d) =>
+      (data.groups[d] || []).forEach((r) => {
+        rows.push([d, r.rank, r.bib_number, r.name, r.club, r.nationality, r.finish_time]);
+      })
+    );
+    const csv = rows
+      .map((row) => row.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bergslagsleden-ultra-resultat.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <PublicLayout>
       <section className="relative grain overflow-hidden">
@@ -37,8 +57,17 @@ export default function Results() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl px-5 py-14 sm:px-8">
+      <div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 print-area">
         {data && (
+          <>
+          <div className="no-print mb-6 flex flex-wrap gap-3">
+            <button onClick={exportCsv} data-testid="export-csv" className="inline-flex items-center gap-2 rounded-sm bg-brand px-5 py-3 text-xs font-bold uppercase tracking-wide text-white transition-all hover:-translate-y-0.5 hover:bg-brand-hover">
+              <Download size={16} /> Ladda ner CSV
+            </button>
+            <button onClick={() => window.print()} data-testid="print-results" className="inline-flex items-center gap-2 rounded-sm border border-border bg-white px-5 py-3 text-xs font-bold uppercase tracking-wide text-brand-forest transition-colors hover:bg-brand-sand">
+              <Printer size={16} /> Skriv ut / PDF
+            </button>
+          </div>
           <Tabs defaultValue={distances[0]}>
             <TabsList className="bg-brand-sand" data-testid="results-tabs">
               {distances.map((d) => (
@@ -85,6 +114,7 @@ export default function Results() {
               </TabsContent>
             ))}
           </Tabs>
+          </>
         )}
       </div>
     </PublicLayout>

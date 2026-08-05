@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend-only regression + 3 new features tested on external REACT_APP_BACKEND_URL. All 6 requested items PASS. Admin login accepts plain username 'admin' + password 'bergslagenadmin' and redirects to /admin; wrong password keeps user on /admin/login. /admin/startnummer renders 6 printable labels (bib-grid populated), all 4 distance filters and print-bibs button present; 47km filter narrows to 3 labels correctly. /resultat has working export-csv (triggered a real download 'bergslagsleden-ultra-resultat.csv') and print-results button. /live public board loads with live-board and live-distance-tabs testids and displays rank/bib/name/club/time rows, accessible without auth. Mobile hero H1 at 390px viewport: text 'BERGSLAGSLEDEN ULTRA' wraps to 2 lines, bounding box x=20 width=350 -> fully visible, NOT clipped. End-to-end regression: registered new 47km runner via /anmalan (bib=7 returned by /api/registrations), logged in as admin, entered finish time 02:30:45 for bib 7, verified new row appears at rank 2 under 47km on both /resultat and /live.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AdminLogin", "issue": "On invalid credentials the page stays on /admin/login but no visible error message is rendered to the user (no .error/[role=alert] element found). Users get no feedback that the password was wrong.", "selector": "[data-testid='login-submit']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py (unchanged from iteration_1)"],
+  "action_items": [
+    "(Optional/Low) Show a visible error toast/message on /admin/login when credentials are rejected (currently silent)."
+  ],
+  "critical_code_review_comments": [
+    "Anmalan form's 'medal' and 'bus_transfer' radio groups (only shown for 47km) have no data-testid attributes -- makes automated testing brittle (had to select by visible label text).",
+    "Wrong-password path returns to /admin/login without user-facing error indication."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100%"},
+  "test_credentials": "Admin username 'admin', password 'bergslagenadmin' (from /app/memory/test_credentials.md). Confirmed working.",
+  "seed_data_creation": "Created one TEST runner via /anmalan for regression (name='Testrunner TEST1785919888', 47km, bib=7, finish_time=02:30:45). Not cleaned up -- it now appears in results list.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration_2 verified: new admin creds, /admin/startnummer, /live, /resultat CSV+print, mobile H1 fix, and full register->admin-time->resultat/live flow. One low-priority UX gap: AdminLogin doesn't show a visible error message when password is wrong (page just stays). Anmalan form's medal & bus radios lack data-testid -- selected by label text. A TEST_ runner (bib 7) was left in the DB.",
+  "rca of the issue": "n/a"
+}

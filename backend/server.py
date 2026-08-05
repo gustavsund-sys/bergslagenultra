@@ -81,7 +81,7 @@ async def get_current_user(request: Request) -> dict:
 
 # ------------------------------------------------------------------ models
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 

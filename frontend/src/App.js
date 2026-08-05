@@ -9,6 +9,8 @@ import StartList from "@/pages/StartList";
 import Results from "@/pages/Results";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import BibLabels from "@/pages/BibLabels";
+import LiveBoard from "@/pages/LiveBoard";
 
 function App() {
   return (
@@ -20,12 +22,21 @@ function App() {
             <Route path="/anmalan" element={<Register />} />
             <Route path="/startlista" element={<StartList />} />
             <Route path="/resultat" element={<Results />} />
+            <Route path="/live" element={<LiveBoard />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route
               path="/admin"
               element={
                 <ProtectedRoute>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/startnummer"
+              element={
+                <ProtectedRoute>
+                  <BibLabels />
                 </ProtectedRoute>
               }
             />
