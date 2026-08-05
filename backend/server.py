@@ -359,6 +359,7 @@ async def get_timing(user: dict = Depends(get_current_user)):
     for doc in docs:
         if doc.get("distance") in state:
             state[doc["distance"]] = doc.get("start_time")
+    state["server_now"] = datetime.now(timezone.utc).isoformat()
     return state
 
 
