@@ -86,3 +86,7 @@ android-sdk/
 credentials.json
 *.key
 .credentials
+
+# Tillåt exempel-miljöfiler (utan hemligheter) att versionshanteras
+!.env.example
+!**/.env.example

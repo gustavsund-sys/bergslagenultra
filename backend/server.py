@@ -154,9 +154,7 @@ async def next_bib_number() -> int:
 
 
 async def send_confirmation_email(reg: dict):
-    if not EMAIL_KEY:
-        logger.warning("EMERGENT_EMAIL_KEY saknas – hoppar över e-post.")
-        return
+    subject = f"Anmälan bekräftad – Bergslagsleden Ultra (nr {reg['bib_number']})"
     addons = ""
     if reg["distance"] == "47 km":
         if reg.get("medal"):
@@ -189,19 +187,36 @@ async def send_confirmation_email(reg: dict):
       </td></tr>
     </table>
     """
-    payload = {
-        "to": [reg["email"]],
-        "subject": f"Anmälan bekräftad – Bergslagsleden Ultra (nr {reg['bib_number']})",
-        "html": html,
-        "from_name": EMAIL_FROM_NAME,
-    }
-    try:
-        async with httpx.AsyncClient(timeout=30) as c:
-            resp = await c.post(f"{EMAIL_BASE_URL}/api/v1/email/send",
-                                headers={"X-Email-Key": EMAIL_KEY}, json=payload)
-        resp.raise_for_status()
-    except Exception as e:
-        logger.error(f"E-post kunde inte skickas: {e}")
+
+    # --- Alternativ A: self-hosting med eget Resend-konto ---
+    resend_key = os.environ.get("RESEND_API_KEY")
+    if resend_key:
+        resend_from = os.environ.get("RESEND_FROM") or f"{EMAIL_FROM_NAME} <onboarding@resend.dev>"
+        try:
+            async with httpx.AsyncClient(timeout=30) as c:
+                resp = await c.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {resend_key}"},
+                    json={"from": resend_from, "to": [reg["email"]], "subject": subject, "html": html},
+                )
+            resp.raise_for_status()
+        except Exception as e:
+            logger.error(f"E-post (Resend) kunde inte skickas: {e}")
+        return
+
+    # --- Alternativ B: Emergents hanterade e-postproxy (endast på plattformen) ---
+    if EMAIL_KEY:
+        payload = {"to": [reg["email"]], "subject": subject, "html": html, "from_name": EMAIL_FROM_NAME}
+        try:
+            async with httpx.AsyncClient(timeout=30) as c:
+                resp = await c.post(f"{EMAIL_BASE_URL}/api/v1/email/send",
+                                    headers={"X-Email-Key": EMAIL_KEY}, json=payload)
+            resp.raise_for_status()
+        except Exception as e:
+            logger.error(f"E-post kunde inte skickas: {e}")
+        return
+
+    logger.warning("Ingen e-postleverantör konfigurerad (RESEND_API_KEY eller EMERGENT_EMAIL_KEY) – hoppar över e-post.")
 
 
 # ------------------------------------------------------------------ auth routes
