@@ -388,6 +388,13 @@ async def reset_timing(body: TimingActionRequest, user: dict = Depends(get_curre
     return {"distance": body.distance, "start_time": None}
 
 
+@api_router.post("/admin/timing/reset-all")
+async def reset_all_timing(user: dict = Depends(get_current_user)):
+    await db.timing.update_many({}, {"$set": {"start_time": None}})
+    await db.registrations.update_many({}, {"$set": {"finish_time": None, "finish_seconds": None}})
+    return {"message": "Tidtagningen är nollställd."}
+
+
 # ------------------------------------------------------------------ startup
 @app.on_event("startup")
 async def startup():

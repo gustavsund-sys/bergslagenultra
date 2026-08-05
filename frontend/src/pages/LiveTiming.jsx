@@ -3,7 +3,18 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { api, formatApiErrorDetail, LOGO_URL } from "@/lib/api";
 import { toast } from "sonner";
-import { LogOut, ArrowLeft, Play, RotateCcw, Flag, X } from "lucide-react";
+import { LogOut, ArrowLeft, Play, RotateCcw, Flag, X, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const fmt = (s) => {
   if (s == null) return "--:--:--";
@@ -83,6 +94,18 @@ export default function LiveTiming() {
     } catch (err) { toast.error(formatApiErrorDetail(err.response?.data?.detail)); }
   };
 
+  const resetAll = async () => {
+    try {
+      await api.post("/admin/timing/reset-all");
+      setTiming({ "6 km": null, "14 km": null, "47 km": null });
+      setArmed({});
+      setRunners((prev) => prev.map((x) => ({ ...x, finish_time: null, finish_seconds: null })));
+      toast.success("Tidtagningen är nollställd.");
+    } catch (err) {
+      toast.error(formatApiErrorDetail(err.response?.data?.detail));
+    }
+  };
+
   const handleBibClick = async (r) => {
     const d = r.distance;
     if (!timing[d]) { toast.error(`Starta ${d} först.`); return; }
@@ -143,12 +166,42 @@ export default function LiveTiming() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <span className="text-sm font-bold uppercase tracking-[0.25em] text-brand">Funktionär</span>
             <h1 className="mt-1 font-display text-3xl font-black uppercase tracking-tight text-brand-forest sm:text-4xl">Tidtagning</h1>
             <p className="mt-1 text-sm text-muted-foreground">Varje distans har sin egen starttid – starta dem var för sig nedan.</p>
           </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                data-testid="reset-all-trigger"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-destructive/40 bg-white px-5 py-3 text-xs font-bold uppercase tracking-wide text-destructive transition-colors hover:bg-destructive hover:text-white"
+              >
+                <RotateCcw size={16} /> Nollställ tidtagning
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent data-testid="reset-all-dialog">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="text-destructive" size={20} /> Nollställ hela tidtagningen?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Detta nollställer <span className="font-bold text-brand-forest">starttiderna för samtliga distanser</span> och raderar <span className="font-bold text-brand-forest">alla registrerade sluttider</span>. Deltagarna finns kvar, men all tidtagning börjar om från noll. Åtgärden går <span className="font-bold text-destructive">inte att ångra</span>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="reset-all-cancel">Avbryt</AlertDialogCancel>
+                <AlertDialogAction
+                  data-testid="reset-all-confirm"
+                  onClick={resetAll}
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                >
+                  Ja, nollställ allt
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <div className="mt-4 rounded-md border border-border bg-white p-4 text-sm text-muted-foreground">
