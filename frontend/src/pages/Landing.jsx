@@ -31,7 +31,7 @@ export default function Landing() {
             <span className="inline-block rounded-sm bg-brand px-3 py-1.5 text-xs font-bold uppercase tracking-[0.25em] text-white">
               12 september 2026
             </span>
-            <h1 className="mt-6 max-w-4xl break-words font-display text-[2.6rem] font-black uppercase leading-[1.05] tracking-tight text-white sm:text-7xl sm:leading-[0.95] sm:tracking-tighter lg:text-8xl">
+            <h1 className="mt-6 max-w-4xl font-display text-[1.75rem] font-black uppercase leading-[1.05] tracking-tight text-white sm:text-7xl sm:leading-[0.95] sm:tracking-tighter lg:text-8xl">
               Bergslagsleden<br />Ultra
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/85">
