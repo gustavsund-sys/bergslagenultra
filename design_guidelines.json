@@ -1,0 +1,102 @@
+{
+  "project_name": "Bergslagsleden Ultra 2026 Companion App",
+  "theme": "light",
+  "design_philosophy": "Athletic, outdoorsy, and energetic. Combining the organic feel of the Swedish Bergslagen forest with the high-performance vibe of an ultramarathon. Contrast is key: earthy base tones punctuated by high-visibility 'Bergslagen Orange' (from the logo). Using E1's Hybrid Rule: custom expressive HTML/Tailwind for the landing page, and heavily customized Shadcn UI for the registration, admin, and results forms.",
+  "typography": {
+    "primary_heading_font": "Outfit",
+    "secondary_body_font": "Manrope",
+    "hierarchy": {
+      "h1": "text-5xl sm:text-6xl font-black tracking-tighter uppercase",
+      "h2": "text-3xl sm:text-4xl font-bold tracking-tight",
+      "h3": "text-xl sm:text-2xl font-semibold",
+      "h4": "text-lg sm:text-xl font-medium",
+      "body": "text-base leading-relaxed",
+      "small_labels": "text-sm font-bold tracking-[0.2em] uppercase"
+    },
+    "guidelines": "Never use Inter for headings. Keep headings tight (tracking-tighter) to feel athletic and punchy. Labels should be small, uppercase, and widely tracked."
+  },
+  "colors": {
+    "palette": {
+      "background": "#F5F5F0",
+      "surface": "#FFFFFF",
+      "primary_accent": "#FF5A00",
+      "primary_accent_hover": "#E04F00",
+      "text_main": "#1A2421",
+      "text_muted": "#4A5A53",
+      "border": "#D3D7D4",
+      "success": "#2C4A3B",
+      "error": "#D9381E"
+    },
+    "guidelines": "Use 'Tinted Grey' rule: Grays are tinted with green/brown to feel like stone and moss. Avoid generic blue-grays. The primary accent (#FF5A00) is strictly for primary CTAs, active states, and energetic highlights. Do not overuse it."
+  },
+  "layouts_and_spacing": {
+    "general": "Generous spacing philosophy. Use p-8 to p-24 for section padding to give breathing room. Mobile-first responsive grids.",
+    "landing_page": "Bento Grid Protocol (Mode A) for showcasing distances (47km, 14km, 6km) and charity info (Barndiabetesfonden). Asymmetry and overlapping elements. The hero section must use a max overlay of bg-black/40 over the background image to keep the forest visible.",
+    "dashboard_and_results": "High Density Grid (Mode B). Dense, functional, and clear for the Start List and Results pages. Tight gaps (gap-4).",
+    "containers": "Use sharp edges or very subtle rounding (rounded-md max 6px) to maintain an athletic, rugged feel. Avoid pillowy, overly soft radiuses."
+  },
+  "visual_enhancers": {
+    "surfaces": "Solid Backgrounds with a sharp 1px border. No glassmorphism on data-heavy tables to prevent visual refraction. Use 'Tracing Beam' or subtle neon-orange highlight borders on the active distance selection cards.",
+    "shadows": "Minimalistic. Use sharp drop-shadows (e.g., 4px 4px 0px rgba(26,36,33,1)) on marketing buttons to give a physical, rugged 'trail' button feel.",
+    "textures": "Subtle noise overlay (grain) on the hero section to kill digital flatness and enhance the outdoor forest vibe."
+  },
+  "components": {
+    "navigation": "Sticky white header (bg-white/95 backdrop-blur-md) with 1px bottom border. Logo on left, navigation links centered, 'Register Now' CTA on right. Mobile uses a clean slide-out menu.",
+    "buttons": "Sharp corners or rounded-sm. Primary: bg-[#FF5A00] text-white hover:bg-[#E04F00] transition-colors. Add a subtle translate-y-[-2px] on hover.",
+    "forms": "Use Shadcn forms. Inputs should have a solid bg-white, 1px border-[#D3D7D4], and on focus: ring-2 ring-[#FF5A00] border-transparent. Never use native datepickers; use Shadcn Calendar.",
+    "tables": "For Start List and Results: Use Shadcn Table. Zebra striping with very faint green-grey (bg-[#F5F5F0]/50) for readability. Left-align textual data, right-align times.",
+    "cards": "Cardless or flat cards with 1px border and no shadow. Use for distance selection (Radio Group style)."
+  },
+  "motion": {
+    "guidelines": "Micro-interactions are mandatory. Buttons lift on hover. Form validation messages slide down smoothly. List items in Start/Results table stagger in on mount. Do not use 'transition: all'."
+  },
+  "accessibility": {
+    "guidelines": "All text must pass APCA/WCAG AA contrast. Orange (#FF5A00) on White is accessible for large text and UI components. Ensure focus rings are highly visible. Respect prefers-reduced-motion."
+  },
+  "media": {
+    "image_urls": [
+      {
+        "url": "https://customer-assets-lxgj4vgw.emergentagent.net/job_cfb0ebba-bd05-4153-825f-2c9df2bf96d5/artifacts/j9q2ed82_loggabergslagen.jpg",
+        "category": "logo",
+        "description": "Bergslagsleden Ultra Logo. Place in header and footer."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1644293230796-739c37cf4ffd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHw0fHx0cmFpbCUyMHJ1bm5pbmclMjBmb3Jlc3R8ZW58MHx8fHwxNzg1OTE4MDQ4fDA&ixlib=rb-4.1.0&q=85",
+        "category": "hero_background",
+        "description": "Dynamic trail runner in forest. Use as the main hero background with a bg-black/40 overlay."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1634145365165-3ac2cfdf1cf5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwyfHxzd2VkaXNoJTIwZm9yZXN0JTIwcnVubmluZ3xlbnwwfHx8fDE3ODU5MTgwNDh8MA&ixlib=rb-4.1.0&q=85",
+        "category": "section_background",
+        "description": "Calm Swedish forest path. Good for the Charity/Barndiabetesfonden section background or footer."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1667781838690-5f32ea0ccea6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHw0fHxydW5uaW5nJTIwcmFjZSUyMGZpbmlzaCUyMGxpbmV8ZW58MHx8fHwxNzg1OTE4MDQ4fDA&ixlib=rb-4.1.0&q=85",
+        "category": "results_hero",
+        "description": "Group of runners/finish line. Use as a smaller hero image for the Results or Start List page."
+      }
+    ],
+    "guidelines": "Images must have max-h-[80vh] on mobile to prevent blocking content. Do not use placeholder images."
+  },
+  "specific_page_instructions": {
+    "landing_page": "Hero section must boldly display '12 September 2026' and 'Bergslagsleden Ultra'. Highlight the 47km main distance. Include a section for the charity 'Barndiabetesfonden'.",
+    "registration_form": "Responsive form. Fields: Name, Birthdate (Shadcn Calendar), Club (or unattached), Nationality, Email, Distance selection (47km, 14km, 6km - rendered as large clickable cards). Conditional fields: If 47km is selected, show toggle/checkbox for 'Medal after finish' and 'Bus transfer Ånnaboda-Digerberget'. If 6km/14km is selected, these addons are hidden or marked N/A.",
+    "admin_dashboard": "Clean, distraction-free UI for officials. Input field for 'Bib Number' (deltagarnummer) that auto-populates Name and Club. Input field for 'Finish Time'. Submit button. Must include a data-testid='admin-time-submit'.",
+    "results_page": "Beautiful, filterable Shadcn table. Tabs to switch between 47km, 14km, and 6km. Columns: Rank, Name, Club, Time. First place highlighted."
+  },
+  "testing": {
+    "guidelines": "All interactive and key informational elements MUST include a 'data-testid' attribute. Example: data-testid='register-submit-button', data-testid='distance-47km-card'."
+  },
+  "universal_guidelines_for_main_agent": [
+    "Do not converge toward generic outputs. Use the defined typography (Outfit & Manrope).",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Create depth through layered design elements with z-index hierarchy and crisp borders.",
+    "Do not apply universal transitions (transition: all).",
+    "Do not center align the app container (.App { text-align: center; }).",
+    "Use modern button styles (sharp or rounded-sm) with interaction animations.",
+    "Never use AI assistant Emoji characters.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Use 'sonner' for toasts.",
+    "Prioritize Shadcn UI for forms, selects, calendars, and tables. Do not use raw HTML selects or date inputs."
+  ]
+}
