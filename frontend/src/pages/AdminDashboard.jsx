@@ -109,7 +109,7 @@ export default function AdminDashboard() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-10">
         <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
           {/* Time entry */}
-          <div>
+          <div className="min-w-0">
             <div className="rounded-md border border-border bg-white p-6">
               <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-brand-forest">
                 <Timer size={18} className="text-brand" /> Registrera sluttid
@@ -117,14 +117,15 @@ export default function AdminDashboard() {
               <form onSubmit={saveTime} className="mt-6 space-y-4" data-testid="finish-time-form">
                 <div>
                   <Label htmlFor="bib" className="text-xs font-bold uppercase tracking-[0.2em]">Deltagarnummer</Label>
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex min-w-0 gap-2">
                     <Input
                       id="bib" type="number" data-testid="input-bib" value={bib}
                       onChange={(e) => { setBib(e.target.value); setLookup(null); }}
                       onBlur={() => bib && doLookup()}
                       placeholder="t.ex. 12"
+                      className="min-w-0 flex-1"
                     />
-                    <button type="button" onClick={() => doLookup()} data-testid="lookup-bib" className="inline-flex items-center rounded-sm bg-brand-forest px-4 text-white transition-colors hover:bg-brand-moss">
+                    <button type="button" onClick={() => doLookup()} data-testid="lookup-bib" className="inline-flex shrink-0 items-center rounded-sm bg-brand-forest px-4 text-white transition-colors hover:bg-brand-moss">
                       <Search size={18} />
                     </button>
                   </div>
@@ -164,7 +165,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Participants table */}
-          <div>
+          <div className="min-w-0">
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {["all", "6 km", "14 km", "47 km"].map((f) => (
                 <button

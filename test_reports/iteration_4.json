@@ -1,0 +1,41 @@
+{
+  "summary": "Element-level mobile overflow scan at 390x844 (iPhone 13) on /admin, /anmalan, /admin/startnummer after admin login. Used getBoundingClientRect() on every element and excluded descendants of any .overflow-x-auto wrapper. No offending elements were found on any of the three pages.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "measurements": {
+    "/admin": {
+      "offenderCount": 0,
+      "input-bib": {"left": 41, "right": 291, "width": 250},
+      "lookup-bib": {"left": 299, "right": 349, "width": 50},
+      "input-time": {"left": 41, "right": 349, "width": 308},
+      "admin-time-submit": {"left": 41, "right": 349, "width": 308}
+    },
+    "/anmalan": {
+      "offenderCount": 0,
+      "input-name": {"left": 20, "right": 370, "width": 350},
+      "input-birthdate": {"left": 20, "right": 370, "width": 350},
+      "input-club": {"left": 20, "right": 370, "width": 350},
+      "input-nationality": {"left": 20, "right": 370, "width": 350},
+      "input-email": {"left": 20, "right": 370, "width": 350},
+      "register-submit-button": {"left": 20, "right": 370, "width": 350}
+    },
+    "/admin/startnummer": {"offenderCount": 0}
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Overflow fix using min-w-0 on flex/grid children and shrink-0 on the search button is working correctly. All Input/button elements fit within the 390px viewport with margin to spare."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "test_credentials": "admin / bergslagenadmin (worked)",
+  "seed_data_creation": "None (used existing seeded bibs 1-7)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Element-level (getBoundingClientRect) scan performed at 390px on /admin, /anmalan, /admin/startnummer, excluding descendants of any .overflow-x-auto wrapper (intentionally scrollable table). Zero overflowing elements detected on all three pages. Specific testids (input-bib, lookup-bib, input-time, admin-time-submit, register form inputs, register-submit-button) all measured well within 0..390px. Previous iteration_3's use of document.scrollWidth was superseded by proper per-element measurement here, which confirms the fix genuinely holds on the real DOM.",
+  "rca of the issue": "Not applicable — no overflow found in this iteration. Fix in AdminDashboard.jsx (min-w-0 on grid/flex children, shrink-0 on lookup button, and moving wide table into overflow-x-auto wrapper) is effective."
+}
