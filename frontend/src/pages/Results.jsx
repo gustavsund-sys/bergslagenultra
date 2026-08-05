@@ -78,8 +78,8 @@ export default function Results() {
             </TabsList>
             {distances.map((d) => (
               <TabsContent key={d} value={d} className="mt-6">
-                <div className="overflow-hidden rounded-md border border-border bg-white">
-                  <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto rounded-md border border-border bg-white">
+                  <table className="w-full min-w-[480px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border bg-brand-forest text-white">
                         <th className="px-4 py-3 font-bold uppercase tracking-wider">Plac.</th>

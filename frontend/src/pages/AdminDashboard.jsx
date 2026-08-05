@@ -82,32 +82,32 @@ export default function AdminDashboard() {
   const withTime = regs.filter((r) => r.finish_time).length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen overflow-x-hidden bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-brand-forest text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8">
-          <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="Logo" className="h-10 w-10 rounded-full bg-white object-contain p-1" />
-            <div>
-              <div className="font-display text-sm font-extrabold uppercase tracking-tight">Funktionärspanel</div>
-              <div className="text-[11px] text-white/50">{user?.email}</div>
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <img src={LOGO_URL} alt="Logo" className="h-9 w-9 shrink-0 rounded-full bg-white object-contain p-1 sm:h-10 sm:w-10" />
+            <div className="min-w-0">
+              <div className="truncate font-display text-xs font-extrabold uppercase tracking-tight sm:text-sm">Funktionärspanel</div>
+              <div className="truncate text-[11px] text-white/50">{user?.email}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Link to="/admin/startnummer" data-testid="nav-startnummer" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <Link to="/admin/startnummer" data-testid="nav-startnummer" title="Startnummer" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
               <Tag size={15} /> <span className="hidden sm:inline">Startnummer</span>
             </Link>
-            <a href="/live" target="_blank" rel="noreferrer" data-testid="nav-live" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10">
+            <a href="/live" target="_blank" rel="noreferrer" data-testid="nav-live" title="Livetavla" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
               <Monitor size={15} /> <span className="hidden sm:inline">Livetavla</span>
             </a>
-            <button onClick={doLogout} data-testid="admin-logout" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10">
+            <button onClick={doLogout} data-testid="admin-logout" title="Logga ut" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
               <LogOut size={15} /> <span className="hidden sm:inline">Logga ut</span>
             </button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
-        <div className="grid gap-8 lg:grid-cols-[400px_1fr]">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-10">
+        <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
           {/* Time entry */}
           <div>
             <div className="rounded-md border border-border bg-white p-6">
@@ -177,8 +177,8 @@ export default function AdminDashboard() {
                 </button>
               ))}
             </div>
-            <div className="overflow-hidden rounded-md border border-border bg-white">
-              <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto rounded-md border border-border bg-white">
+              <table className="w-full min-w-[520px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-border bg-brand-forest text-white">
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Nr</th>

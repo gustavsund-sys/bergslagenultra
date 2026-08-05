@@ -16,28 +16,28 @@ export default function BibLabels() {
   return (
     <div className="min-h-screen bg-background">
       <header className="no-print sticky top-0 z-40 border-b border-border bg-brand-forest text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8">
-          <div className="flex items-center gap-3">
-            <Link to="/admin" data-testid="back-to-admin" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10">
-              <ArrowLeft size={15} /> Tillbaka
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-8">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <Link to="/admin" data-testid="back-to-admin" title="Tillbaka" className="inline-flex shrink-0 items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
+              <ArrowLeft size={15} /> <span className="hidden sm:inline">Tillbaka</span>
             </Link>
-            <div className="font-display text-sm font-extrabold uppercase tracking-tight">Startnummerlappar</div>
+            <div className="truncate font-display text-xs font-extrabold uppercase tracking-tight sm:text-sm">Startnummerlappar</div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {["all", "6 km", "14 km", "47 km"].map((f) => (
               <button key={f} onClick={() => setFilter(f)} data-testid={`bib-filter-${f.replace(" ", "")}`}
-                className={`rounded-sm px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${filter === f ? "bg-brand text-white" : "border border-white/20 hover:bg-white/10"}`}>
+                className={`rounded-sm px-2.5 py-2 text-xs font-bold uppercase tracking-wide transition-colors sm:px-3 ${filter === f ? "bg-brand text-white" : "border border-white/20 hover:bg-white/10"}`}>
                 {f === "all" ? "Alla" : f}
               </button>
             ))}
-            <button onClick={() => window.print()} data-testid="print-bibs" className="inline-flex items-center gap-2 rounded-sm bg-brand px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-brand-hover">
+            <button onClick={() => window.print()} data-testid="print-bibs" className="inline-flex items-center gap-2 rounded-sm bg-brand px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-brand-hover sm:px-4">
               <Printer size={15} /> Skriv ut
             </button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 print-area">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 print-area">
         <p className="no-print mb-6 text-sm text-muted-foreground">
           {filtered.length} startnummerlappar. Använd knappen "Skriv ut" och välj skrivare eller "Spara som PDF".
         </p>
