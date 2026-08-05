@@ -5,7 +5,7 @@ import { api, formatApiErrorDetail, LOGO_URL } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { LogOut, Search, Timer, CheckCircle2, Trash2, Clock, Tag, Monitor } from "lucide-react";
+import { LogOut, Search, Timer, CheckCircle2, Trash2, Clock, Tag, Monitor, Pencil, Check, X } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -17,6 +17,8 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false);
   const [regs, setRegs] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [editBib, setEditBib] = useState(null);
+  const [editTime, setEditTime] = useState("");
 
   const loadRegs = useCallback(async () => {
     try {
@@ -78,6 +80,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const startEdit = (r) => { setEditBib(r.bib_number); setEditTime(r.finish_time || ""); };
+  const cancelEdit = () => { setEditBib(null); setEditTime(""); };
+  const saveEdit = async (bibNum) => {
+    if (!editTime.trim()) { await clearTime(bibNum); cancelEdit(); return; }
+    try {
+      await api.post("/admin/finish", { bib_number: bibNum, finish_time: editTime.trim() });
+      toast.success("Tid uppdaterad");
+      cancelEdit();
+      loadRegs();
+    } catch (err) {
+      toast.error(formatApiErrorDetail(err.response?.data?.detail));
+    }
+  };
+
   const filtered = regs.filter((r) => filter === "all" || r.distance === filter);
   const withTime = regs.filter((r) => r.finish_time).length;
 
@@ -93,6 +109,9 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <Link to="/admin/timing" data-testid="nav-timing" title="Tidtagning" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
+              <Timer size={15} /> <span className="hidden sm:inline">Tidtagning</span>
+            </Link>
             <Link to="/admin/startnummer" data-testid="nav-startnummer" title="Startnummer" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
               <Tag size={15} /> <span className="hidden sm:inline">Startnummer</span>
             </Link>
@@ -166,7 +185,9 @@ export default function AdminDashboard() {
 
           {/* Participants table */}
           <div className="min-w-0">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-bold uppercase tracking-[0.2em] text-brand-forest">Deltagare &amp; tider</div>
+              <div className="flex flex-wrap items-center gap-2">
               {["all", "6 km", "14 km", "47 km"].map((f) => (
                 <button
                   key={f}
@@ -177,6 +198,7 @@ export default function AdminDashboard() {
                   {f === "all" ? "Alla" : f}
                 </button>
               ))}
+              </div>
             </div>
             <div className="overflow-x-auto rounded-md border border-border bg-white">
               <table className="w-full min-w-[520px] text-left text-sm">
@@ -201,17 +223,43 @@ export default function AdminDashboard() {
                         <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">{r.club}</td>
                         <td className="px-4 py-3 text-muted-foreground">{r.distance}</td>
                         <td className="px-4 py-3 text-right font-mono font-bold">
-                          {r.finish_time ? (
+                          {editBib === r.bib_number ? (
+                            <input
+                              autoFocus
+                              value={editTime}
+                              onChange={(e) => setEditTime(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") saveEdit(r.bib_number); if (e.key === "Escape") cancelEdit(); }}
+                              data-testid={`edit-time-input-${r.bib_number}`}
+                              placeholder="TT:MM:SS"
+                              className="w-28 rounded-sm border border-brand px-2 py-1 text-right font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                            />
+                          ) : r.finish_time ? (
                             <span className="text-brand-forest">{r.finish_time}</span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-muted-foreground/60"><Clock size={13} /> —</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {r.finish_time && (
-                            <button onClick={() => clearTime(r.bib_number)} data-testid={`clear-time-${r.bib_number}`} className="text-muted-foreground transition-colors hover:text-destructive" title="Rensa tid">
-                              <Trash2 size={15} />
-                            </button>
+                          {editBib === r.bib_number ? (
+                            <div className="inline-flex items-center gap-2">
+                              <button onClick={() => saveEdit(r.bib_number)} data-testid={`save-time-${r.bib_number}`} className="text-brand-moss transition-colors hover:text-brand-forest" title="Spara">
+                                <Check size={17} />
+                              </button>
+                              <button onClick={cancelEdit} data-testid={`cancel-time-${r.bib_number}`} className="text-muted-foreground transition-colors hover:text-destructive" title="Avbryt">
+                                <X size={17} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-3">
+                              <button onClick={() => startEdit(r)} data-testid={`edit-time-${r.bib_number}`} className="text-muted-foreground transition-colors hover:text-brand" title="Ändra tid">
+                                <Pencil size={15} />
+                              </button>
+                              {r.finish_time && (
+                                <button onClick={() => clearTime(r.bib_number)} data-testid={`clear-time-${r.bib_number}`} className="text-muted-foreground transition-colors hover:text-destructive" title="Rensa tid">
+                                  <Trash2 size={15} />
+                                </button>
+                              )}
+                            </div>
                           )}
                         </td>
                       </tr>

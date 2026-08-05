@@ -14,8 +14,8 @@ if not BASE_URL:
 BASE_URL = BASE_URL.rstrip('/')
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "gustavsund@gmail.com"
-ADMIN_PASSWORD = "BergUltra2026!"
+ADMIN_EMAIL = "admin"
+ADMIN_PASSWORD = "bergslagenadmin"
 
 
 @pytest.fixture(scope="session")

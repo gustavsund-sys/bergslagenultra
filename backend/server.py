@@ -101,6 +101,10 @@ class FinishTimeRequest(BaseModel):
     finish_time: str  # "HH:MM:SS" or "H:MM:SS" or "MM:SS"
 
 
+class TimingActionRequest(BaseModel):
+    distance: str
+
+
 # ------------------------------------------------------------------ utils
 def serialize_reg(doc: dict) -> dict:
     return {
@@ -345,6 +349,42 @@ async def admin_delete_registration(bib: int, user: dict = Depends(get_current_u
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Deltagarnummer hittades inte.")
     return {"message": "Anmälan borttagen"}
+
+
+# ------------------------------------------------------------------ timing (live)
+@api_router.get("/admin/timing")
+async def get_timing(user: dict = Depends(get_current_user)):
+    docs = await db.timing.find().to_list(100)
+    state = {d: None for d in DISTANCES}
+    for doc in docs:
+        if doc.get("distance") in state:
+            state[doc["distance"]] = doc.get("start_time")
+    return state
+
+
+@api_router.post("/admin/timing/start")
+async def start_timing(body: TimingActionRequest, user: dict = Depends(get_current_user)):
+    if body.distance not in DISTANCES:
+        raise HTTPException(status_code=400, detail="Ogiltig distans.")
+    now = datetime.now(timezone.utc).isoformat()
+    await db.timing.update_one({"distance": body.distance}, {"$set": {"start_time": now}}, upsert=True)
+    return {"distance": body.distance, "start_time": now}
+
+
+@api_router.post("/admin/timing/start-all")
+async def start_all_timing(user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc).isoformat()
+    for d in DISTANCES:
+        await db.timing.update_one({"distance": d}, {"$set": {"start_time": now}}, upsert=True)
+    return {"start_time": now}
+
+
+@api_router.post("/admin/timing/reset")
+async def reset_timing(body: TimingActionRequest, user: dict = Depends(get_current_user)):
+    if body.distance not in DISTANCES:
+        raise HTTPException(status_code=400, detail="Ogiltig distans.")
+    await db.timing.update_one({"distance": body.distance}, {"$set": {"start_time": None}}, upsert=True)
+    return {"distance": body.distance, "start_time": None}
 
 
 # ------------------------------------------------------------------ startup
