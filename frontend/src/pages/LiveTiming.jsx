@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { api, formatApiErrorDetail, LOGO_URL } from "@/lib/api";
 import { toast } from "sonner";
-import { LogOut, ArrowLeft, Play, RotateCcw, Flag, Zap } from "lucide-react";
+import { LogOut, ArrowLeft, Play, RotateCcw, Flag, Zap, X } from "lucide-react";
 
 const fmt = (s) => {
   if (s == null) return "--:--:--";
@@ -112,6 +112,21 @@ export default function LiveTiming() {
     }
   };
 
+  const cancelArm = (bib) => {
+    setArmed((prev) => { const c = { ...prev }; delete c[bib]; return c; });
+  };
+
+  const removeFinish = async (r) => {
+    if (!window.confirm(`Ångra målgång för nr ${r.bib_number} (${r.name})? Tiden tas bort från resultatlistan.`)) return;
+    try {
+      await api.delete(`/admin/finish/${r.bib_number}`);
+      toast.success(`Målgång borttagen för nr ${r.bib_number}`);
+      setRunners((prev) => prev.map((x) => (x.bib_number === r.bib_number ? { ...x, finish_time: null, finish_seconds: null } : x)));
+    } catch (err) {
+      toast.error(formatApiErrorDetail(err.response?.data?.detail));
+    }
+  };
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-brand-forest text-white">
@@ -141,7 +156,7 @@ export default function LiveTiming() {
         </div>
 
         <div className="mt-4 rounded-md border border-border bg-white p-4 text-sm text-muted-foreground">
-          <span className="font-bold text-brand-forest">Så funkar det:</span> Starta distansen. Klicka på en löpares nummer <span className="font-bold text-brand">en gång</span> för att fånga tiden, och <span className="font-bold text-brand">en gång till</span> för att bekräfta målgången (dubbelklicka snabbt). Tider går att ändra i efterhand under "Deltagare & tider".
+          <span className="font-bold text-brand-forest">Så funkar det:</span> Starta distansen. Klicka på en löpares nummer <span className="font-bold text-brand">en gång</span> för att fånga tiden, och <span className="font-bold text-brand">en gång till</span> för att bekräfta målgången (dubbelklicka snabbt). Klickade du fel? Tryck på × uppe i hörnet av knappen för att ångra. Tider går att ändra i efterhand under "Deltagare & tider".
         </div>
 
         <div className="mt-8 space-y-10">
@@ -184,19 +199,30 @@ export default function LiveTiming() {
                         ? "border-brand-moss bg-brand-moss text-white"
                         : "border-border bg-white text-brand-forest hover:border-brand";
                       return (
-                        <button
-                          key={r.bib_number}
-                          onClick={() => handleBibClick(r)}
-                          data-testid={`bib-btn-${r.bib_number}`}
-                          className={`flex min-h-[128px] flex-col items-center justify-center gap-1 rounded-md border-2 p-4 transition-all active:scale-95 ${cls}`}
-                        >
-                          <span className="font-display text-4xl font-black leading-none">{r.bib_number}</span>
-                          <span className={`mt-1 truncate text-xs font-semibold ${isArmed || isDone ? "text-white/85" : "text-muted-foreground"}`}>{r.name.split(" ")[0]}</span>
-                          <span className={`mt-1 font-mono text-sm font-bold tabular-nums ${isArmed || isDone ? "text-white" : "text-brand-forest"}`}>{displayTime}</span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider">
-                            {isArmed ? "Bekräfta?" : isDone ? <span className="inline-flex items-center gap-1"><Flag size={11} /> I mål</span> : ""}
-                          </span>
-                        </button>
+                        <div key={r.bib_number} className="relative">
+                          {(isArmed || isDone) && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); if (isArmed) { cancelArm(r.bib_number); } else { removeFinish(r); } }}
+                              data-testid={`undo-bib-${r.bib_number}`}
+                              title={isArmed ? "Avbryt" : "Ångra målgång"}
+                              className="absolute -right-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-brand-forest text-white shadow-md transition-colors hover:bg-destructive"
+                            >
+                              <X size={17} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleBibClick(r)}
+                            data-testid={`bib-btn-${r.bib_number}`}
+                            className={`flex w-full min-h-[128px] flex-col items-center justify-center gap-1 rounded-md border-2 p-4 transition-all active:scale-95 ${cls}`}
+                          >
+                            <span className="font-display text-4xl font-black leading-none">{r.bib_number}</span>
+                            <span className={`mt-1 truncate text-xs font-semibold ${isArmed || isDone ? "text-white/85" : "text-muted-foreground"}`}>{r.name.split(" ")[0]}</span>
+                            <span className={`mt-1 font-mono text-sm font-bold tabular-nums ${isArmed || isDone ? "text-white" : "text-brand-forest"}`}>{displayTime}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">
+                              {isArmed ? "Bekräfta?" : isDone ? <span className="inline-flex items-center gap-1"><Flag size={11} /> I mål</span> : ""}
+                            </span>
+                          </button>
+                        </div>
                       );
                     })
                   )}
