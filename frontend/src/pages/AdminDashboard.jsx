@@ -214,7 +214,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="overflow-x-auto rounded-md border border-border bg-white">
-              <table className="w-full min-w-[520px] text-left text-sm">
+              <table className="w-full min-w-[640px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-border bg-brand-forest text-white">
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Nr</th>
@@ -228,33 +228,14 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody data-testid="admin-registrations-body">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Inga anmälningar.</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Inga anmälningar.</td></tr>
                   ) : (
                     filtered.map((r, i) => (
                       <tr key={r.bib_number} className={i % 2 ? "bg-brand-sand/40" : "bg-white"}>
                         <td className="px-4 py-3 font-bold text-brand">{r.bib_number}</td>
-                        <td className="px-4 py-3 font-semibold text-brand-forest">
-                          <span className="inline-flex items-center gap-2">
-                            {r.name}
-                            {takesBus(r) && (
-                              <span data-testid={`bus-badge-${r.bib_number}`} title="Ska åka buss" className="inline-flex items-center gap-1 rounded-sm bg-brand/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
-                                <Bus size={12} /> Buss
-                              </span>
-                            )}
-                          </span>
-                        </td>
+                        <td className="px-4 py-3 font-semibold text-brand-forest">{r.name}</td>
                         <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">{r.club}</td>
                         <td className="px-4 py-3 text-muted-foreground">{r.distance}</td>
-                        <td className="px-4 py-3 text-center">
-                          <input
-                            type="checkbox"
-                            checked={!!r.paid}
-                            onChange={() => togglePaid(r)}
-                            data-testid={`paid-checkbox-${r.bib_number}`}
-                            title={r.paid ? "Avgift betald" : "Avgift ej betald"}
-                            className="h-5 w-5 cursor-pointer accent-brand-moss"
-                          />
-                        </td>
                         <td className="px-4 py-3 text-right font-mono font-bold">
                           {editBib === r.bib_number ? (
                             <input
@@ -294,6 +275,25 @@ export default function AdminDashboard() {
                               )}
                             </div>
                           )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {takesBus(r) ? (
+                            <span data-testid={`bus-badge-${r.bib_number}`} title="Ska åka buss" className="inline-flex items-center justify-center text-brand">
+                              <Bus size={18} />
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/30">–</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={!!r.paid}
+                            onChange={() => togglePaid(r)}
+                            data-testid={`paid-checkbox-${r.bib_number}`}
+                            title={r.paid ? "Avgift betald" : "Avgift ej betald"}
+                            className="h-5 w-5 cursor-pointer accent-brand-moss"
+                          />
                         </td>
                       </tr>
                     ))
