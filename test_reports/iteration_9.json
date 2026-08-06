@@ -1,0 +1,20 @@
+{
+  "summary": "Verified header/body alignment fix in AdminDashboard participants table. All 8 header columns match body cells; Buss and Betalat are the two rightmost columns. Bus badges show for bib 11 & 13 (not 12). Paid checkbox toggles and persists across reload. paid-1 reset to false at end of test.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "test_credentials": "admin / bergslagenadmin",
+  "seed_data_creation": "None; used existing 15-runner seed. paid-1 restored to false.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Header order verified: Nr, Namn, Klubb, Distans, Tid, (empty), Buss, Betalat. Alignment verified via bounding box math (Buss header x-range covers bus-badge-11 center; Betalat header x-range covers paid-checkbox-1 center). Paid persistence via reload confirmed.",
+  "rca of the issue": "Fix confirmed: thead now has 8 th cells matching tbody's 8 td cells with Buss/Betalat as the two rightmost columns."
+}

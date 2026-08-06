@@ -221,9 +221,10 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Namn</th>
                     <th className="hidden px-4 py-3 font-bold uppercase tracking-wider md:table-cell">Klubb</th>
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Distans</th>
-                    <th className="px-4 py-3 text-center font-bold uppercase tracking-wider">Betalat</th>
                     <th className="px-4 py-3 text-right font-bold uppercase tracking-wider">Tid</th>
                     <th className="px-4 py-3"></th>
+                    <th className="px-4 py-3 text-center font-bold uppercase tracking-wider">Buss</th>
+                    <th className="px-4 py-3 text-center font-bold uppercase tracking-wider">Betalat</th>
                   </tr>
                 </thead>
                 <tbody data-testid="admin-registrations-body">
