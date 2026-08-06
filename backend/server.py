@@ -105,6 +105,10 @@ class TimingActionRequest(BaseModel):
     distance: str
 
 
+class PaidRequest(BaseModel):
+    paid: bool
+
+
 # ------------------------------------------------------------------ utils
 def serialize_reg(doc: dict) -> dict:
     return {
@@ -120,6 +124,7 @@ def serialize_reg(doc: dict) -> dict:
         "bus_transfer": doc.get("bus_transfer"),
         "finish_time": doc.get("finish_time"),
         "finish_seconds": doc.get("finish_seconds"),
+        "paid": doc.get("paid", False),
         "created_at": doc.get("created_at"),
     }
 
@@ -271,6 +276,7 @@ async def create_registration(body: RegistrationCreate):
         "bus_transfer": body.bus_transfer if body.distance == "47 km" else None,
         "finish_time": None,
         "finish_seconds": None,
+        "paid": False,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     result = await db.registrations.insert_one(doc)
@@ -329,6 +335,16 @@ async def admin_lookup(bib: int, user: dict = Depends(get_current_user)):
     r = await db.registrations.find_one({"bib_number": bib})
     if not r:
         raise HTTPException(status_code=404, detail="Deltagarnummer hittades inte.")
+    return serialize_reg(r)
+
+
+@api_router.post("/admin/registrations/{bib}/paid")
+async def admin_set_paid(bib: int, body: PaidRequest, user: dict = Depends(get_current_user)):
+    r = await db.registrations.find_one({"bib_number": bib})
+    if not r:
+        raise HTTPException(status_code=404, detail="Deltagarnummer hittades inte.")
+    await db.registrations.update_one({"bib_number": bib}, {"$set": {"paid": body.paid}})
+    r["paid"] = body.paid
     return serialize_reg(r)
 
 

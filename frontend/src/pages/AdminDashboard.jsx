@@ -5,7 +5,7 @@ import { api, formatApiErrorDetail, LOGO_URL } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { LogOut, Search, Timer, CheckCircle2, Trash2, Clock, Tag, Monitor, Pencil, Check, X } from "lucide-react";
+import { LogOut, Search, Timer, CheckCircle2, Trash2, Clock, Tag, Monitor, Pencil, Check, X, Bus } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -76,6 +76,19 @@ export default function AdminDashboard() {
       toast.success("Tid rensad");
       loadRegs();
     } catch (err) {
+      toast.error(formatApiErrorDetail(err.response?.data?.detail));
+    }
+  };
+
+  const takesBus = (r) => typeof r.bus_transfer === "string" && r.bus_transfer.trim().toLowerCase().startsWith("ja");
+
+  const togglePaid = async (r) => {
+    const next = !r.paid;
+    setRegs((prev) => prev.map((x) => (x.bib_number === r.bib_number ? { ...x, paid: next } : x)));
+    try {
+      await api.post(`/admin/registrations/${r.bib_number}/paid`, { paid: next });
+    } catch (err) {
+      setRegs((prev) => prev.map((x) => (x.bib_number === r.bib_number ? { ...x, paid: !next } : x)));
       toast.error(formatApiErrorDetail(err.response?.data?.detail));
     }
   };
@@ -208,20 +221,40 @@ export default function AdminDashboard() {
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Namn</th>
                     <th className="hidden px-4 py-3 font-bold uppercase tracking-wider md:table-cell">Klubb</th>
                     <th className="px-4 py-3 font-bold uppercase tracking-wider">Distans</th>
+                    <th className="px-4 py-3 text-center font-bold uppercase tracking-wider">Betalat</th>
                     <th className="px-4 py-3 text-right font-bold uppercase tracking-wider">Tid</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody data-testid="admin-registrations-body">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Inga anmälningar.</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Inga anmälningar.</td></tr>
                   ) : (
                     filtered.map((r, i) => (
                       <tr key={r.bib_number} className={i % 2 ? "bg-brand-sand/40" : "bg-white"}>
                         <td className="px-4 py-3 font-bold text-brand">{r.bib_number}</td>
-                        <td className="px-4 py-3 font-semibold text-brand-forest">{r.name}</td>
+                        <td className="px-4 py-3 font-semibold text-brand-forest">
+                          <span className="inline-flex items-center gap-2">
+                            {r.name}
+                            {takesBus(r) && (
+                              <span data-testid={`bus-badge-${r.bib_number}`} title="Ska åka buss" className="inline-flex items-center gap-1 rounded-sm bg-brand/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+                                <Bus size={12} /> Buss
+                              </span>
+                            )}
+                          </span>
+                        </td>
                         <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">{r.club}</td>
                         <td className="px-4 py-3 text-muted-foreground">{r.distance}</td>
+                        <td className="px-4 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={!!r.paid}
+                            onChange={() => togglePaid(r)}
+                            data-testid={`paid-checkbox-${r.bib_number}`}
+                            title={r.paid ? "Avgift betald" : "Avgift ej betald"}
+                            className="h-5 w-5 cursor-pointer accent-brand-moss"
+                          />
+                        </td>
                         <td className="px-4 py-3 text-right font-mono font-bold">
                           {editBib === r.bib_number ? (
                             <input

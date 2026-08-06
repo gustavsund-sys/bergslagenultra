@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only testing for new 'Betalat' (paid) checkbox and 'Buss' badge in AdminDashboard /admin. Logged in as admin/bergslagenadmin. Paid checkbox toggle+persistence across reload works correctly (checked persists true, then uncheck persists false). Filter buttons (Alla/6 km/14 km/47 km) work. Finish-time inline pencil edit opens input in TID column (regression OK). BUS BADGE VERIFICATION FAILED - not because of frontend code (takesBus() logic 'startsWith(\"ja\")' is correct) but because seed data does not match the review request: GET /api/admin/registrations shows bibs 11 and 13 have bus_transfer='Nej, jag vill inte åka buss.' instead of 'Ja, jag vill åka buss...'. So bus-badge-11 and bus-badge-13 are correctly NOT rendered, but this contradicts the reviewer expectation.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/admin/registrations", "issue": "Seed data mismatch: bibs 11 & 13 have bus_transfer='Nej, jag vill inte åka buss.' although review claims they should be 'Ja...'. All 15 runners currently have paid=false (good starting state)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Bus badge display for bibs 11 & 13", "issue": "bus-badge-11 and bus-badge-13 are not visible in DOM because backend returns bus_transfer starting with 'Nej' for those runners. Frontend takesBus() correctly requires startsWith('ja'). To verify feature end-to-end, main agent needs to update seed data so bibs 11 & 13 have bus_transfer='Ja, jag vill åka buss...'.", "affected_selectors": ["[data-testid='bus-badge-11']", "[data-testid='bus-badge-13']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_7.json"],
+  "action_items": [
+    "Update seed data (or admin action) so bibs 11 and 13 have bus_transfer='Ja, jag vill åka buss (399 kr, betalas vid anmälan)' (or any string starting with 'Ja') so that bus-badge-11 and bus-badge-13 render as designed. After that, re-run bus-badge visual test.",
+    "Optional: bib 1 currently shows a stale finish time (00:00:07) from a previous iteration; consider clearing it in the seed reset step."
+  ],
+  "critical_code_review_comments": [
+    "AdminDashboard.jsx takesBus() logic is robust (case-insensitive, trims, startsWith('ja')). No changes needed.",
+    "Backend endpoint POST /api/admin/registrations/{bib}/paid is functional and persistent (verified via UI reload cycle).",
+    "serialize_reg returns 'paid' default False on GET as expected."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "80% (4/5 verifiable; bus badge blocked by seed data)"},
+  "test_credentials": "admin / bergslagenadmin (from review request; /app/memory/test_credentials.md not consulted since credentials supplied)",
+  "seed_data_creation": "None. Left all paid=false at end (toggled bib 1 on then off during test).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Paid checkbox persistence + reload cycle already verified. Main open item is seed-data adjustment for bus_transfer on bibs 11 & 13 so the bus-badge feature can be verified visually. Frontend takesBus logic is correct - do NOT rewrite it; instead fix seed data.",
+  "rca of the issue": "Missing bus badges on bibs 11 & 13: root cause is data, not code. API returns bus_transfer starting with 'Nej' for those bibs, and the frontend correctly only renders the badge when it starts with 'ja'. Reproduction: login /admin, inspect DOM for [data-testid='bus-badge-11'] -> absent. Fetch /api/admin/registrations and inspect bus_transfer field. Mitigation: update seed script or admin data so those bibs have bus_transfer='Ja, ...'."
+}
