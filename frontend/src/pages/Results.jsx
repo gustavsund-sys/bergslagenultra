@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PublicLayout } from "@/components/PublicLayout";
-import { publicData, subscribePublicRows } from "@/lib/api";
+import { api } from "@/lib/api";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trophy, Medal, Download, Printer } from "lucide-react";
+import { Trophy, Medal, Download, Printer, RefreshCw } from "lucide-react";
 
 const RESULTS_HERO =
   "https://images.unsplash.com/photo-1667781838690-5f32ea0ccea6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHw0fHxydW5uaW5nJTIwcmFjZSUyMGZpbmlzaCUyMGxpbmV8ZW58MHx8fHwxNzg1OTE4MDQ4fDA&ixlib=rb-4.1.0&q=85";
@@ -16,13 +16,27 @@ const rankStyle = (rank) => {
 
 export default function Results() {
   const [data, setData] = useState(null);
+  const [updated, setUpdated] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data: nextData } = await api.get("/results");
+      setData(nextData);
+      setUpdated(new Date());
+    } catch {
+      setError("Resultaten kunde inte hämtas. Försök igen.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    return subscribePublicRows(
-      (rows) => setData(publicData.groupResults(rows)),
-      () => setData({ distances: [], groups: {} }),
-    );
-  }, []);
+    loadData();
+  }, [loadData]);
 
   const distances = data?.distances || [];
 
@@ -61,15 +75,21 @@ export default function Results() {
       </section>
 
       <div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 print-area">
+        {error && <p className="no-print mb-5 rounded-sm border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
+        {loading && !data && <p className="text-center text-sm text-muted-foreground">Hämtar resultat…</p>}
         {data && (
           <>
-          <div className="no-print mb-6 flex flex-wrap gap-3">
+          <div className="no-print mb-6 flex flex-wrap items-center gap-3">
+            <button onClick={loadData} disabled={loading} data-testid="refresh-results" className="inline-flex items-center gap-2 rounded-sm bg-brand-moss px-5 py-3 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-brand-forest disabled:opacity-60">
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> {loading ? "Uppdaterar…" : "Uppdatera"}
+            </button>
             <button onClick={exportCsv} data-testid="export-csv" className="inline-flex items-center gap-2 rounded-sm bg-brand px-5 py-3 text-xs font-bold uppercase tracking-wide text-white transition-all hover:-translate-y-0.5 hover:bg-brand-hover">
               <Download size={16} /> Ladda ner CSV
             </button>
             <button onClick={() => window.print()} data-testid="print-results" className="inline-flex items-center gap-2 rounded-sm border border-border bg-white px-5 py-3 text-xs font-bold uppercase tracking-wide text-brand-forest transition-colors hover:bg-brand-sand">
               <Printer size={16} /> Skriv ut / PDF
             </button>
+            {updated && <span className="text-xs text-muted-foreground">Senast uppdaterad {updated.toLocaleTimeString("sv-SE")}</span>}
           </div>
           <Tabs defaultValue={distances[0]}>
             <TabsList className="bg-brand-sand" data-testid="results-tabs">

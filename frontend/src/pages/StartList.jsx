@@ -1,18 +1,32 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PublicLayout } from "@/components/PublicLayout";
-import { publicData, subscribePublicRows } from "@/lib/api";
+import { api } from "@/lib/api";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users } from "lucide-react";
+import { RefreshCw, Users } from "lucide-react";
 
 export default function StartList() {
   const [data, setData] = useState(null);
+  const [updated, setUpdated] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data: nextData } = await api.get("/startlist");
+      setData(nextData);
+      setUpdated(new Date());
+    } catch {
+      setError("Startlistan kunde inte hämtas. Försök igen.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    return subscribePublicRows(
-      (rows) => setData(publicData.groupStartList(rows)),
-      () => setData({ distances: [], groups: {} }),
-    );
-  }, []);
+    loadData();
+  }, [loadData]);
 
   const distances = data?.distances || [];
   const total = distances.reduce((s, d) => s + (data?.groups?.[d]?.length || 0), 0);
@@ -24,9 +38,25 @@ export default function StartList() {
         <h1 className="mt-3 font-display text-4xl font-black uppercase tracking-tighter text-brand-forest sm:text-5xl">
           Startlista
         </h1>
-        <p className="mt-3 flex items-center gap-2 text-muted-foreground">
-          <Users size={18} className="text-brand" /> {total} anmälda deltagare totalt
-        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="flex items-center gap-2 text-muted-foreground">
+              <Users size={18} className="text-brand" /> {total} anmälda deltagare totalt
+            </p>
+            {updated && <p className="mt-1 text-xs text-muted-foreground">Senast uppdaterad {updated.toLocaleTimeString("sv-SE")}</p>}
+          </div>
+          <button
+            onClick={loadData}
+            disabled={loading}
+            data-testid="refresh-startlist"
+            className="inline-flex items-center gap-2 rounded-sm border border-border bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-brand-forest transition-colors hover:bg-brand-sand disabled:opacity-60"
+          >
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> {loading ? "Uppdaterar…" : "Uppdatera"}
+          </button>
+        </div>
+
+        {error && <p className="mt-5 rounded-sm border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
+        {loading && !data && <p className="mt-10 text-center text-sm text-muted-foreground">Hämtar startlistan…</p>}
 
         {data && (
           <Tabs defaultValue={distances[0]} className="mt-10">
