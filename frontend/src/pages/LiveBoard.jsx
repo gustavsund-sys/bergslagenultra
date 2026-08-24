@@ -31,7 +31,11 @@ export default function LiveBoard() {
   }, [distances.length]);
 
   const current = distances[active];
-  const rows = (data?.groups?.[current] || []).slice(0, 15);
+  const currentRows = data?.groups?.[current] || [];
+  const rows = [
+    ...currentRows.filter((row) => row.race_status !== "DNF").slice(0, 15),
+    ...currentRows.filter((row) => row.race_status === "DNF"),
+  ];
 
   return (
     <div className="min-h-screen bg-brand-forest text-white grain">
@@ -82,20 +86,23 @@ export default function LiveBoard() {
               {rows.length === 0 ? (
                 <tr><td colSpan={5} className="px-5 py-16 text-center text-lg text-white/40">Inga målgångar ännu…</td></tr>
               ) : (
-                rows.map((r) => (
-                  <tr key={r.bib_number} className={`border-b border-white/5 ${r.rank === 1 ? "bg-brand/15" : ""}`}>
+                rows.map((r) => {
+                  const isDnf = r.race_status === "DNF";
+                  return (
+                  <tr key={r.bib_number} className={`border-b border-white/5 ${isDnf ? "bg-white/5 text-white/50" : r.rank === 1 ? "bg-brand/15" : ""}`}>
                     <td className={`px-5 py-4 font-display text-2xl font-black ${rankColor(r.rank)}`}>
                       <span className="inline-flex items-center gap-2">
-                        {r.rank <= 3 && <Medal size={20} className={rankColor(r.rank)} />}
-                        {r.rank}
+                        {Number.isInteger(r.rank) && r.rank <= 3 && <Medal size={20} className={rankColor(r.rank)} />}
+                        {isDnf ? "—" : r.rank}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-xl font-bold text-brand">{r.bib_number}</td>
                     <td className="px-5 py-4 text-xl font-semibold">{r.name}</td>
                     <td className="hidden px-5 py-4 text-lg text-white/60 sm:table-cell">{r.club}</td>
-                    <td className="px-5 py-4 text-right font-mono text-xl font-bold">{r.finish_time}</td>
+                    <td className="px-5 py-4 text-right font-mono text-xl font-bold">{isDnf ? "DNF" : r.finish_time}</td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
