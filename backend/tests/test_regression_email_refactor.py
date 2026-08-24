@@ -2,7 +2,7 @@
 
 Verifies:
 - POST /api/registrations succeeds even when RESEND_API_KEY is not set
-  (Emergent proxy path or logger-only warn path must not break registration).
+  (the logger-only warning path must not break registration).
 - 15 seeded runners (bibs 1..15) are present via GET /api/admin/registrations.
 - POST /api/admin/timing/reset {distance} clears both start_time AND
   finish_time/finish_seconds for all registrations of that distance.
@@ -14,20 +14,24 @@ so the database is left with the 15 seeded runners and no times.
 """
 import os
 import time
+from pathlib import Path
 import requests
 import pytest
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL')
 if not BASE_URL:
-    with open('/app/frontend/.env') as f:
-        for line in f:
+    env_file = Path(__file__).resolve().parents[2] / "frontend" / ".env"
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
             if line.startswith('REACT_APP_BACKEND_URL='):
                 BASE_URL = line.split('=', 1)[1].strip()
+if not BASE_URL:
+    pytest.skip("Set REACT_APP_BACKEND_URL to run backend integration tests", allow_module_level=True)
 BASE_URL = BASE_URL.rstrip('/')
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin"
-ADMIN_PASSWORD = "bergslagenadmin"
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 DISTANCES = ["6 km", "14 km", "47 km"]
 
 

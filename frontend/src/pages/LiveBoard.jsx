@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, LOGO_URL } from "@/lib/api";
+import { LOGO_URL, publicData, subscribePublicRows } from "@/lib/api";
 import { Trophy, Medal, Radio } from "lucide-react";
 
 const rankColor = (rank) => {
@@ -14,14 +14,11 @@ export default function LiveBoard() {
   const [active, setActive] = useState(0);
   const [updated, setUpdated] = useState(null);
 
-  const load = () => {
-    api.get("/results").then((r) => { setData(r.data); setUpdated(new Date()); }).catch(() => {});
-  };
-
   useEffect(() => {
-    load();
-    const t = setInterval(load, 15000);
-    return () => clearInterval(t);
+    return subscribePublicRows((rows) => {
+      setData(publicData.groupResults(rows));
+      setUpdated(new Date());
+    });
   }, []);
 
   const distances = data?.distances || [];
@@ -103,7 +100,7 @@ export default function LiveBoard() {
             </tbody>
           </table>
         </div>
-        <div className="mt-4 text-center text-xs text-white/30">Tavlan uppdateras automatiskt var 15:e sekund · distanser växlar var 12:e sekund</div>
+        <div className="mt-4 text-center text-xs text-white/30">Tavlan uppdateras i realtid · distanser växlar var 12:e sekund</div>
       </div>
     </div>
   );

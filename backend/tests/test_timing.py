@@ -1,19 +1,23 @@
 """Tests for the new live-timing endpoints."""
 import os
+from pathlib import Path
 import requests
 import pytest
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL')
 if not BASE_URL:
-    with open('/app/frontend/.env') as f:
-        for line in f:
+    env_file = Path(__file__).resolve().parents[2] / "frontend" / ".env"
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
             if line.startswith('REACT_APP_BACKEND_URL='):
                 BASE_URL = line.split('=', 1)[1].strip()
+if not BASE_URL:
+    pytest.skip("Set REACT_APP_BACKEND_URL to run backend integration tests", allow_module_level=True)
 BASE_URL = BASE_URL.rstrip('/')
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin"
-ADMIN_PASSWORD = "bergslagenadmin"
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 DISTANCES = ["6 km", "14 km", "47 km"]
 
 

@@ -26,9 +26,11 @@ db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
-EMAIL_BASE_URL = "https://integrations.emergentagent.com"
-EMAIL_KEY = os.environ.get('EMERGENT_EMAIL_KEY')
 EMAIL_FROM_NAME = os.environ.get('EMAIL_FROM_NAME', 'Bergslagsleden Ultra')
+COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "true").lower() == "true"
+COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "lax").lower()
+if COOKIE_SAMESITE not in {"lax", "strict", "none"}:
+    raise ValueError("COOKIE_SAMESITE must be lax, strict or none")
 RACE_DATE = "12 september 2026"
 
 DISTANCES = ["6 km", "14 km", "47 km"]
@@ -209,19 +211,7 @@ async def send_confirmation_email(reg: dict):
             logger.error(f"E-post (Resend) kunde inte skickas: {e}")
         return
 
-    # --- Alternativ B: Emergents hanterade e-postproxy (endast på plattformen) ---
-    if EMAIL_KEY:
-        payload = {"to": [reg["email"]], "subject": subject, "html": html, "from_name": EMAIL_FROM_NAME}
-        try:
-            async with httpx.AsyncClient(timeout=30) as c:
-                resp = await c.post(f"{EMAIL_BASE_URL}/api/v1/email/send",
-                                    headers={"X-Email-Key": EMAIL_KEY}, json=payload)
-            resp.raise_for_status()
-        except Exception as e:
-            logger.error(f"E-post kunde inte skickas: {e}")
-        return
-
-    logger.warning("Ingen e-postleverantör konfigurerad (RESEND_API_KEY eller EMERGENT_EMAIL_KEY) – hoppar över e-post.")
+    logger.warning("Ingen e-postleverantör konfigurerad (RESEND_API_KEY saknas) – hoppar över e-post.")
 
 
 # ------------------------------------------------------------------ auth routes
@@ -232,8 +222,9 @@ async def login(body: LoginRequest, response: Response):
     if not user or not verify_password(body.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Fel användarnamn eller lösenord.")
     token = create_access_token(str(user["_id"]), email)
-    response.set_cookie(key="access_token", value=token, httponly=True, secure=True,
-                        samesite="none", max_age=43200, path="/")
+    response.set_cookie(key="access_token", value=token, httponly=True,
+                        secure=COOKIE_SECURE, samesite=COOKIE_SAMESITE,
+                        max_age=43200, path="/")
     return {"id": str(user["_id"]), "email": user["email"], "name": user.get("name"), "role": user.get("role")}
 
 
@@ -448,9 +439,15 @@ async def startup():
 
 app.include_router(api_router)
 
+cors_origins = [
+    origin.strip()
+    for origin in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.environ.get("FRONTEND_URL", "http://localhost:3000")],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

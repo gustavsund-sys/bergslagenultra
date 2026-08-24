@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, LOGO_URL } from "@/lib/api";
+import { LOGO_URL, subscribeAdminRows } from "@/lib/api";
 import { Printer, ArrowLeft } from "lucide-react";
 
 export default function BibLabels() {
@@ -8,7 +8,7 @@ export default function BibLabels() {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    api.get("/admin/registrations").then((r) => setRegs(r.data)).catch(() => setRegs([]));
+    return subscribeAdminRows(setRegs, () => setRegs([]));
   }, []);
 
   const filtered = regs.filter((r) => filter === "all" || r.distance === filter);
