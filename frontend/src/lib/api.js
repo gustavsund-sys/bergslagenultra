@@ -46,12 +46,22 @@ function groupStartList(rows) {
 
 function groupResults(rows) {
   const groups = Object.fromEntries(DISTANCES.map((distance) => [distance, []]));
-  rows.filter((row) => row.finish_seconds != null).forEach((row) => {
+  rows.filter((row) => row.finish_seconds != null || row.race_status === "DNF").forEach((row) => {
     if (groups[row.distance]) groups[row.distance].push(row);
   });
   DISTANCES.forEach((distance) => {
-    groups[distance].sort((a, b) => a.finish_seconds - b.finish_seconds);
-    groups[distance] = groups[distance].map((row, index) => ({ ...row, rank: index + 1 }));
+    groups[distance].sort((a, b) => {
+      const aDnf = a.race_status === "DNF";
+      const bDnf = b.race_status === "DNF";
+      if (aDnf !== bDnf) return aDnf ? 1 : -1;
+      if (aDnf) return Number(a.bib_number) - Number(b.bib_number);
+      return a.finish_seconds - b.finish_seconds;
+    });
+    let rank = 0;
+    groups[distance] = groups[distance].map((row) => ({
+      ...row,
+      rank: row.race_status === "DNF" ? null : ++rank,
+    }));
   });
   return { distances: DISTANCES, groups };
 }

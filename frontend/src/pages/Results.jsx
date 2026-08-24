@@ -42,10 +42,10 @@ export default function Results() {
 
   const exportCsv = () => {
     if (!data) return;
-    const rows = [["Distans", "Placering", "Nr", "Namn", "Klubb", "Nation", "Tid"]];
+    const rows = [["Distans", "Placering", "Nr", "Namn", "Klubb", "Nation", "Tid", "Status"]];
     distances.forEach((d) =>
       (data.groups[d] || []).forEach((r) => {
-        rows.push([d, r.rank, r.bib_number, r.name, r.club, r.nationality, r.finish_time]);
+        rows.push([d, r.rank, r.bib_number, r.name, r.club, r.nationality, r.finish_time, r.race_status]);
       })
     );
     const csv = rows
@@ -70,7 +70,7 @@ export default function Results() {
           <h1 className="mt-3 flex items-center gap-3 font-display text-4xl font-black uppercase tracking-tighter text-white sm:text-5xl">
             <Trophy className="text-brand" size={40} /> Resultat
           </h1>
-          <p className="mt-3 text-white/80">Slutresultat sorterat per distans och sluttid.</p>
+          <p className="mt-3 text-white/80">Slutresultat sorterat per distans och sluttid. DNF visas längst ner.</p>
         </div>
       </section>
 
@@ -116,20 +116,23 @@ export default function Results() {
                       {(data.groups[d] || []).length === 0 ? (
                         <tr><td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">Inga resultat ännu.</td></tr>
                       ) : (
-                        data.groups[d].map((r, i) => (
-                          <tr key={r.bib_number} className={`${r.rank === 1 ? "bg-brand/10" : i % 2 ? "bg-brand-sand/40" : "bg-white"}`}>
+                        data.groups[d].map((r, i) => {
+                          const isDnf = r.race_status === "DNF";
+                          return (
+                          <tr key={r.bib_number} className={`${isDnf ? "bg-slate-100 text-slate-600" : r.rank === 1 ? "bg-brand/10" : i % 2 ? "bg-brand-sand/40" : "bg-white"}`}>
                             <td className={`px-4 py-3 font-display text-lg font-black ${rankStyle(r.rank)}`}>
                               <span className="inline-flex items-center gap-1">
-                                {r.rank <= 3 && <Medal size={16} className={rankStyle(r.rank)} />}
-                                {r.rank}
+                                {Number.isInteger(r.rank) && r.rank <= 3 && <Medal size={16} className={rankStyle(r.rank)} />}
+                                {isDnf ? "—" : r.rank}
                               </span>
                             </td>
                             <td className="px-4 py-3 font-bold text-brand">{r.bib_number}</td>
                             <td className="px-4 py-3 font-semibold text-brand-forest">{r.name}</td>
                             <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">{r.club}</td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-brand-forest">{r.finish_time}</td>
+                            <td className={`px-4 py-3 text-right font-mono font-bold ${isDnf ? "text-slate-600" : "text-brand-forest"}`}>{isDnf ? "DNF" : r.finish_time}</td>
                           </tr>
-                        ))
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
