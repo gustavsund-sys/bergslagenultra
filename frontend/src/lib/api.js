@@ -76,7 +76,12 @@ export function subscribeTiming(callback, onError = () => {}) {
     const state = Object.fromEntries(DISTANCES.map((distance) => [distance, null]));
     snapshot.docs.forEach((item) => {
       const data = fromSnapshot(item);
-      if (DISTANCES.includes(data.distance)) state[data.distance] = data.start_time || null;
+      if (DISTANCES.includes(data.distance) && data.start_time) {
+        state[data.distance] = {
+          start_time: data.start_time,
+          stop_time: data.stop_time || null,
+        };
+      }
     });
     callback(state);
   }, onError);
@@ -165,7 +170,7 @@ async function resetTiming(distance = null) {
   });
   (distance ? [distance] : DISTANCES).forEach((item) => operations.push([
     doc(db, "timing", item.replace(" ", "-")),
-    { distance: item, start_time: null },
+    { distance: item, start_time: null, stop_time: null },
   ]));
   for (let offset = 0; offset < operations.length; offset += 450) {
     const batch = writeBatch(db);
@@ -188,7 +193,12 @@ async function request(method, path, body) {
     const state = Object.fromEntries(DISTANCES.map((distance) => [distance, null]));
     snapshot.docs.forEach((item) => {
       const data = fromSnapshot(item);
-      if (DISTANCES.includes(data.distance)) state[data.distance] = data.start_time || null;
+      if (DISTANCES.includes(data.distance) && data.start_time) {
+        state[data.distance] = {
+          start_time: data.start_time,
+          stop_time: data.stop_time || null,
+        };
+      }
     });
     return { data: state };
   }
@@ -202,9 +212,16 @@ async function request(method, path, body) {
   if (method === "post" && path === "/admin/timing/start") {
     const localStart = new Date().toISOString();
     await setDoc(doc(db, "timing", body.distance.replace(" ", "-")), {
-      distance: body.distance, start_time: serverTimestamp(),
+      distance: body.distance, start_time: serverTimestamp(), stop_time: null,
     });
-    return { data: { distance: body.distance, start_time: localStart } };
+    return { data: { distance: body.distance, start_time: localStart, stop_time: null } };
+  }
+  if (method === "post" && path === "/admin/timing/stop") {
+    const localStop = new Date().toISOString();
+    await updateDoc(doc(db, "timing", body.distance.replace(" ", "-")), {
+      stop_time: serverTimestamp(),
+    });
+    return { data: { distance: body.distance, stop_time: localStop } };
   }
   if (method === "post" && path === "/admin/timing/reset") {
     await resetTiming(body.distance);
