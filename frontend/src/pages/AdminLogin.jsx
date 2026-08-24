@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { formatApiErrorDetail, LOGO_URL } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 
 export default function AdminLogin() {
   const { login } = useAuth();
@@ -65,6 +65,14 @@ export default function AdminLogin() {
             {loading ? "Loggar in…" : "Logga in"}
           </button>
         </form>
+
+        <Link
+          to="/"
+          data-testid="back-to-home"
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-sm border border-brand-forest/20 px-6 py-3 text-sm font-bold uppercase tracking-wide text-brand-forest transition-colors hover:bg-brand-forest hover:text-white"
+        >
+          <ArrowLeft size={16} /> Till startsidan
+        </Link>
       </div>
     </div>
   );
