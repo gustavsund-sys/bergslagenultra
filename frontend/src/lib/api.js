@@ -135,27 +135,105 @@ async function createRegistration(payload) {
   });
 }
 
-async function setFinish(bib, value) {
+async function setFinish(bib, value, preventOverwrite = false) {
   const parsed = parseTime(value);
   const id = String(bib);
   const privateRef = doc(db, "registrations_private", id);
-  const snapshot = await getDoc(privateRef);
-  if (!snapshot.exists()) throw appError("Deltagarnummer hittades inte.");
-  const batch = writeBatch(db);
-  const update = { finish_time: parsed.formatted, finish_seconds: parsed.seconds };
-  batch.update(privateRef, update);
-  batch.update(doc(db, "registrations_public", id), update);
-  await batch.commit();
-  return { ...fromSnapshot(snapshot), ...update };
+  const publicRef = doc(db, "registrations_public", id);
+  const auditRef = doc(collection(db, "timing_audit"));
+  const previous = await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(privateRef);
+    if (!snapshot.exists()) throw appError("Deltagarnummer hittades inte.");
+    const old = snapshot.data();
+    if (preventOverwrite && old.finish_time) {
+      throw appError(`Nr ${bib} har redan sluttiden ${old.finish_time}.`);
+    }
+    const update = {
+      finish_time: parsed.formatted,
+      finish_seconds: parsed.seconds,
+      race_status: null,
+      finish_updated_at: serverTimestamp(),
+    };
+    transaction.update(privateRef, update);
+    transaction.update(publicRef, update);
+    transaction.set(auditRef, {
+      bib_number: Number(bib),
+      distance: old.distance,
+      action: old.finish_time ? "finish_updated" : "finish_created",
+      old_finish_time: old.finish_time || null,
+      new_finish_time: parsed.formatted,
+      old_status: old.race_status || null,
+      new_status: null,
+      changed_at: serverTimestamp(),
+    });
+    return old;
+  });
+  return {
+    ...Object.fromEntries(Object.entries(previous).map(([key, value]) => [
+      key, value && typeof value.toDate === "function" ? value.toDate().toISOString() : value,
+    ])),
+    finish_time: parsed.formatted,
+    finish_seconds: parsed.seconds,
+    race_status: null,
+    finish_updated_at: new Date().toISOString(),
+  };
 }
 
 async function clearFinish(bib) {
   const id = String(bib);
-  const batch = writeBatch(db);
-  const update = { finish_time: null, finish_seconds: null };
-  batch.update(doc(db, "registrations_private", id), update);
-  batch.update(doc(db, "registrations_public", id), update);
-  await batch.commit();
+  const privateRef = doc(db, "registrations_private", id);
+  const publicRef = doc(db, "registrations_public", id);
+  const auditRef = doc(collection(db, "timing_audit"));
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(privateRef);
+    if (!snapshot.exists()) throw appError("Deltagarnummer hittades inte.");
+    const old = snapshot.data();
+    const update = { finish_time: null, finish_seconds: null, finish_updated_at: serverTimestamp() };
+    transaction.update(privateRef, update);
+    transaction.update(publicRef, update);
+    transaction.set(auditRef, {
+      bib_number: Number(bib),
+      distance: old.distance,
+      action: "finish_cleared",
+      old_finish_time: old.finish_time || null,
+      new_finish_time: null,
+      old_status: old.race_status || null,
+      new_status: old.race_status || null,
+      changed_at: serverTimestamp(),
+    });
+  });
+}
+
+async function setRaceStatus(bib, status) {
+  if (![null, "DNF"].includes(status)) throw appError("Ogiltig loppstatus.");
+  const id = String(bib);
+  const privateRef = doc(db, "registrations_private", id);
+  const publicRef = doc(db, "registrations_public", id);
+  const auditRef = doc(collection(db, "timing_audit"));
+  return runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(privateRef);
+    if (!snapshot.exists()) throw appError("Deltagarnummer hittades inte.");
+    const old = snapshot.data();
+    const update = {
+      race_status: status,
+      finish_time: status ? null : old.finish_time || null,
+      finish_seconds: status ? null : old.finish_seconds ?? null,
+      finish_updated_at: serverTimestamp(),
+    };
+    transaction.update(privateRef, update);
+    transaction.update(publicRef, update);
+    transaction.set(auditRef, {
+      bib_number: Number(bib),
+      distance: old.distance,
+      action: status === "DNF" ? "status_dnf" : "status_cleared",
+      old_finish_time: old.finish_time || null,
+      new_finish_time: update.finish_time,
+      old_status: old.race_status || null,
+      new_status: status,
+      changed_at: serverTimestamp(),
+    });
+    return { bib_number: Number(bib), ...update, finish_updated_at: new Date().toISOString() };
+  });
 }
 
 async function resetTiming(distance = null) {
@@ -164,9 +242,27 @@ async function resetTiming(distance = null) {
     : await getDocs(privateCollection);
   const operations = [];
   registrations.docs.forEach((item) => {
-    const update = { finish_time: null, finish_seconds: null };
+    const old = item.data();
+    const update = {
+      finish_time: null,
+      finish_seconds: null,
+      race_status: null,
+      finish_updated_at: serverTimestamp(),
+    };
     operations.push([doc(db, "registrations_private", item.id), update]);
     operations.push([doc(db, "registrations_public", item.id), update]);
+    if (old.finish_time || old.race_status) {
+      operations.push([doc(collection(db, "timing_audit")), {
+        bib_number: Number(old.bib_number),
+        distance: old.distance,
+        action: "timing_reset",
+        old_finish_time: old.finish_time || null,
+        new_finish_time: null,
+        old_status: old.race_status || null,
+        new_status: null,
+        changed_at: serverTimestamp(),
+      }]);
+    }
   });
   (distance ? [distance] : DISTANCES).forEach((item) => operations.push([
     doc(db, "timing", item.replace(" ", "-")),
@@ -203,7 +299,12 @@ async function request(method, path, body) {
     return { data: state };
   }
   if (method === "post" && path === "/registrations") return { data: await createRegistration(body) };
-  if (method === "post" && path === "/admin/finish") return { data: await setFinish(body.bib_number, body.finish_time) };
+  if (method === "post" && path === "/admin/finish") {
+    return { data: await setFinish(body.bib_number, body.finish_time, Boolean(body.prevent_overwrite)) };
+  }
+  if (method === "post" && path === "/admin/status") {
+    return { data: await setRaceStatus(body.bib_number, body.status ?? null) };
+  }
   if (method === "post" && /\/admin\/registrations\/\d+\/paid$/.test(path)) {
     const bib = path.split("/")[3];
     await updateDoc(doc(db, "registrations_private", bib), { paid: Boolean(body.paid) });

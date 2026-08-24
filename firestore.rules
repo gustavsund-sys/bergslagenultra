@@ -99,6 +99,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    match /timing_audit/{entry} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false;
+    }
+
     match /admins/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow write: if false;
