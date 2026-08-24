@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { api, formatApiErrorDetail, LOGO_URL, subscribeAdminRows, subscribeTiming } from "@/lib/api";
 import { toast } from "sonner";
-import { LogOut, ArrowLeft, Play, RotateCcw, Flag, X, AlertTriangle } from "lucide-react";
+import { LogOut, ArrowLeft, Play, Square, RotateCcw, Flag, X, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +34,7 @@ export default function LiveTiming() {
   const [now, setNow] = useState(Date.now());
   const [armed, setArmed] = useState({}); // { bib: capturedSeconds }
   const savingRef = useRef({});
+  const stoppingRef = useRef({});
 
   useEffect(() => {
     const unsubscribeTiming = subscribeTiming(setTiming);
@@ -52,18 +53,37 @@ export default function LiveTiming() {
   const doLogout = async () => { await logout(); navigate("/admin/login"); };
 
   const elapsed = (d) => {
-    const st = timing[d];
-    if (!st) return null;
-    return Math.max(0, Math.floor((now - new Date(st).getTime()) / 1000));
+    const state = timing[d];
+    if (!state?.start_time) return null;
+    const end = state.stop_time ? new Date(state.stop_time).getTime() : now;
+    return Math.max(0, Math.floor((end - new Date(state.start_time).getTime()) / 1000));
   };
 
   const startDistance = async (d) => {
-    if (timing[d] && !window.confirm(`${d} är redan startad. Vill du starta om tiden? Detta nollställer klockan.`)) return;
+    if (timing[d]?.start_time && !window.confirm(`${d} har redan en starttid. Vill du starta om tiden? Detta nollställer klockan.`)) return;
     try {
       const { data } = await api.post("/admin/timing/start", { distance: d });
-      setTiming((prev) => ({ ...prev, [d]: data.start_time }));
+      setTiming((prev) => ({ ...prev, [d]: data }));
       toast.success(`${d} startad!`);
     } catch (err) { toast.error(formatApiErrorDetail(err.response?.data?.detail)); }
+  };
+
+  const stopDistance = async (d, automatic = false) => {
+    if (!timing[d]?.start_time || timing[d]?.stop_time || stoppingRef.current[d]) return;
+    if (!automatic && !window.confirm(`Stoppa klockan för ${d}? Den stannar på den aktuella tiden.`)) return;
+    stoppingRef.current[d] = true;
+    try {
+      const { data } = await api.post("/admin/timing/stop", { distance: d });
+      setTiming((prev) => ({
+        ...prev,
+        [d]: prev[d] ? { ...prev[d], stop_time: data.stop_time } : prev[d],
+      }));
+      toast.success(automatic ? `${d} stoppad – alla deltagare är i mål.` : `${d} stoppad.`);
+    } catch (err) {
+      toast.error(formatApiErrorDetail(err.response?.data?.detail));
+    } finally {
+      stoppingRef.current[d] = false;
+    }
   };
 
   const resetDistance = async (d) => {
@@ -94,7 +114,8 @@ export default function LiveTiming() {
 
   const handleBibClick = async (r) => {
     const d = r.distance;
-    if (!timing[d]) { toast.error(`Starta ${d} först.`); return; }
+    if (!timing[d]?.start_time) { toast.error(`Starta ${d} först.`); return; }
+    if (timing[d]?.stop_time) { toast.error(`${d} är stoppad.`); return; }
     const bib = r.bib_number;
 
     if (armed[bib] !== undefined) {
@@ -107,6 +128,10 @@ export default function LiveTiming() {
         toast.success(`Nr ${bib} · ${r.name} i mål på ${fmt(secs)}`);
         setArmed((prev) => { const c = { ...prev }; delete c[bib]; return c; });
         setRunners((prev) => prev.map((x) => (x.bib_number === bib ? { ...x, finish_time: fmt(secs), finish_seconds: secs } : x)));
+        const distanceRunners = runners.filter((runner) => runner.distance === d);
+        const everyoneFinished = distanceRunners.length > 0
+          && distanceRunners.every((runner) => runner.bib_number === bib || !!runner.finish_time);
+        if (everyoneFinished) await stopDistance(d, true);
       } catch (err) {
         toast.error(formatApiErrorDetail(err.response?.data?.detail));
       } finally {
@@ -191,27 +216,35 @@ export default function LiveTiming() {
         </div>
 
         <div className="mt-4 rounded-md border border-border bg-white p-4 text-sm text-muted-foreground">
-          <span className="font-bold text-brand-forest">Så funkar det:</span> Starta distansen. Klicka på en löpares nummer <span className="font-bold text-brand">en gång</span> för att fånga tiden, och <span className="font-bold text-brand">en gång till</span> för att bekräfta målgången (dubbelklicka snabbt). Klickade du fel? Tryck på × uppe i hörnet av knappen för att ångra. Tider går att ändra i efterhand under "Deltagare & tider". <span className="font-bold text-brand-forest">Starttiden sparas med Firestores servertid</span> – andra funktionärer ser samma klocka och målgångar i realtid.
+          <span className="font-bold text-brand-forest">Så funkar det:</span> Starta distansen. Klicka på en löpares nummer <span className="font-bold text-brand">en gång</span> för att fånga tiden, och <span className="font-bold text-brand">en gång till</span> för att bekräfta målgången (dubbelklicka snabbt). Klickade du fel? Tryck på × uppe i hörnet av knappen för att ångra. Klockan kan stoppas manuellt och stoppas automatiskt när alla på distansen är i mål. Tider går att ändra i efterhand under "Deltagare & tider". <span className="font-bold text-brand-forest">Start- och stopptid sparas med Firestores servertid</span> – andra funktionärer ser samma klocka och målgångar i realtid.
         </div>
 
         <div className="mt-8 space-y-10">
           {DISTANCES.map((d) => {
             const list = runners.filter((r) => r.distance === d).sort((a, b) => a.bib_number - b.bib_number);
             const el = elapsed(d);
-            const started = timing[d] != null;
+            const started = !!timing[d]?.start_time;
+            const stopped = !!timing[d]?.stop_time;
+            const running = started && !stopped;
             return (
               <section key={d} data-testid={`timing-section-${d.replace(" ", "")}`}>
                 <div className="flex flex-col gap-3 rounded-md border border-border bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4">
                     <div className="font-display text-3xl font-black tracking-tighter text-brand-forest">{d}</div>
-                    <div className={`font-mono text-2xl font-bold tabular-nums ${started ? "text-brand" : "text-muted-foreground/50"}`} data-testid={`clock-${d.replace(" ", "")}`}>
+                    <div className={`font-mono text-2xl font-bold tabular-nums ${running ? "text-brand" : stopped ? "text-brand-forest" : "text-muted-foreground/50"}`} data-testid={`clock-${d.replace(" ", "")}`}>
                       {started ? fmt(el) : "--:--:--"}
                     </div>
+                    {stopped && <span className="rounded-full bg-brand-forest/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-forest">Stoppad</span>}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button onClick={() => startDistance(d)} data-testid={`start-${d.replace(" ", "")}`} className="inline-flex items-center gap-2 rounded-sm bg-brand-moss px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-brand-forest">
                       <Play size={15} /> {started ? "Starta om" : "Starta"}
                     </button>
+                    {running && (
+                      <button onClick={() => stopDistance(d)} data-testid={`stop-${d.replace(" ", "")}`} className="inline-flex items-center gap-2 rounded-sm bg-brand-forest px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-brand">
+                        <Square size={14} /> Stoppa
+                      </button>
+                    )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <button data-testid={`reset-${d.replace(" ", "")}`} className="inline-flex items-center gap-2 rounded-sm border border-destructive/40 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-destructive transition-colors hover:bg-destructive hover:text-white">
