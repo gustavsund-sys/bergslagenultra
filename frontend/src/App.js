@@ -1,5 +1,5 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -17,7 +17,7 @@ function App() {
   return (
     <div className="App">
       <AuthProvider>
-        <BrowserRouter>
+        <HashRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/anmalan" element={<Register />} />
@@ -50,7 +50,7 @@ function App() {
               }
             />
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
         <Toaster position="top-center" richColors />
       </AuthProvider>
     </div>

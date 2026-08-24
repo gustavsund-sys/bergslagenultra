@@ -81,7 +81,7 @@ export default function Register() {
               Anmälan bekräftad!
             </h1>
             <p className="mt-3 text-muted-foreground">
-              Tack {done.name}! En bekräftelse har skickats till {done.email}.
+              Tack {done.name}! Din anmälan är sparad.
             </p>
             <div className="mx-auto mt-8 max-w-xs rounded-md border-2 border-brand bg-brand-sand p-6">
               <div className="text-xs font-bold uppercase tracking-[0.25em] text-brand-moss">Ditt deltagarnummer</div>
@@ -118,7 +118,7 @@ export default function Register() {
           Anmälan
         </h1>
         <p className="mt-3 max-w-xl text-muted-foreground">
-          Fyll i formuläret nedan. Du får ett deltagarnummer och en bekräftelse via e-post direkt.
+          Fyll i formuläret nedan. Du får ditt deltagarnummer direkt när anmälan har sparats.
         </p>
 
         <form onSubmit={submit} className="mt-10 space-y-8" data-testid="registration-form">

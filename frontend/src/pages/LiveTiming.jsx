@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { api, formatApiErrorDetail, LOGO_URL } from "@/lib/api";
+import { api, formatApiErrorDetail, LOGO_URL, subscribeAdminRows, subscribeTiming } from "@/lib/api";
 import { toast } from "sonner";
 import { LogOut, ArrowLeft, Play, RotateCcw, Flag, X, AlertTriangle } from "lucide-react";
 import {
@@ -32,32 +32,17 @@ export default function LiveTiming() {
   const [timing, setTiming] = useState({});
   const [runners, setRunners] = useState([]);
   const [now, setNow] = useState(Date.now());
-  const [offset, setOffset] = useState(0); // server clock offset (ms): serverNow - clientNow
   const [armed, setArmed] = useState({}); // { bib: capturedSeconds }
   const savingRef = useRef({});
 
-  const load = useCallback(async () => {
-    try {
-      const [t, r] = await Promise.all([
-        api.get("/admin/timing"),
-        api.get("/admin/registrations"),
-      ]);
-      const { server_now, ...dist } = t.data;
-      if (server_now) setOffset(new Date(server_now).getTime() - Date.now());
-      setTiming(dist);
-      setRunners(r.data);
-    } catch (e) {
-      /* ignore */
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  // Poll every 10s so timing + finishes stay in sync across funktionärer/enheter
   useEffect(() => {
-    const id = setInterval(load, 10000);
-    return () => clearInterval(id);
-  }, [load]);
+    const unsubscribeTiming = subscribeTiming(setTiming);
+    const unsubscribeRunners = subscribeAdminRows(setRunners);
+    return () => {
+      unsubscribeTiming();
+      unsubscribeRunners();
+    };
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 500);
@@ -69,7 +54,7 @@ export default function LiveTiming() {
   const elapsed = (d) => {
     const st = timing[d];
     if (!st) return null;
-    return Math.max(0, Math.floor((now + offset - new Date(st).getTime()) / 1000));
+    return Math.max(0, Math.floor((now - new Date(st).getTime()) / 1000));
   };
 
   const startDistance = async (d) => {
@@ -206,7 +191,7 @@ export default function LiveTiming() {
         </div>
 
         <div className="mt-4 rounded-md border border-border bg-white p-4 text-sm text-muted-foreground">
-          <span className="font-bold text-brand-forest">Så funkar det:</span> Starta distansen. Klicka på en löpares nummer <span className="font-bold text-brand">en gång</span> för att fånga tiden, och <span className="font-bold text-brand">en gång till</span> för att bekräfta målgången (dubbelklicka snabbt). Klickade du fel? Tryck på × uppe i hörnet av knappen för att ångra. Tider går att ändra i efterhand under "Deltagare & tider". <span className="font-bold text-brand-forest">Tiden körs i servern</span> – loggar en annan funktionär in visas samma klocka och sparade tider automatiskt.
+          <span className="font-bold text-brand-forest">Så funkar det:</span> Starta distansen. Klicka på en löpares nummer <span className="font-bold text-brand">en gång</span> för att fånga tiden, och <span className="font-bold text-brand">en gång till</span> för att bekräfta målgången (dubbelklicka snabbt). Klickade du fel? Tryck på × uppe i hörnet av knappen för att ångra. Tider går att ändra i efterhand under "Deltagare & tider". <span className="font-bold text-brand-forest">Starttiden sparas med Firestores servertid</span> – andra funktionärer ser samma klocka och målgångar i realtid.
         </div>
 
         <div className="mt-8 space-y-10">

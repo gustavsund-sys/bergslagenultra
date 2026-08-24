@@ -22,7 +22,12 @@ export default function AdminLogin() {
       await login(email, password);
       navigate("/admin");
     } catch (err) {
-      setError(formatApiErrorDetail(err.response?.data?.detail) || "Inloggning misslyckades.");
+      const firebaseMessages = {
+        "auth/invalid-credential": "Fel e-postadress eller lösenord.",
+        "auth/invalid-email": "Ange en giltig e-postadress.",
+        "auth/too-many-requests": "För många försök. Vänta en stund och försök igen.",
+      };
+      setError(firebaseMessages[err.code] || err.message || formatApiErrorDetail(err.response?.data?.detail));
     } finally {
       setLoading(false);
     }
@@ -43,12 +48,12 @@ export default function AdminLogin() {
 
         <form onSubmit={submit} className="mt-8 space-y-5" data-testid="admin-login-form">
           <div>
-            <Label htmlFor="email" className="text-xs font-bold uppercase tracking-[0.2em]">Användarnamn</Label>
-            <Input id="email" type="text" data-testid="login-email" className="mt-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin" />
+            <Label htmlFor="email" className="text-xs font-bold uppercase tracking-[0.2em]">E-postadress</Label>
+            <Input id="email" type="email" data-testid="login-email" className="mt-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="funktionar@exempel.se" autoComplete="username" />
           </div>
           <div>
             <Label htmlFor="password" className="text-xs font-bold uppercase tracking-[0.2em]">Lösenord</Label>
-            <Input id="password" type="password" data-testid="login-password" className="mt-2" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+            <Input id="password" type="password" data-testid="login-password" className="mt-2" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
           </div>
           {error && <p className="text-sm font-semibold text-destructive" data-testid="login-error">{error}</p>}
           <button

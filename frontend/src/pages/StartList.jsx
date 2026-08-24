@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { PublicLayout } from "@/components/PublicLayout";
-import { api } from "@/lib/api";
+import { publicData, subscribePublicRows } from "@/lib/api";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Users } from "lucide-react";
 
@@ -8,7 +8,10 @@ export default function StartList() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    api.get("/startlist").then((r) => setData(r.data)).catch(() => setData({ distances: [], groups: {} }));
+    return subscribePublicRows(
+      (rows) => setData(publicData.groupStartList(rows)),
+      () => setData({ distances: [], groups: {} }),
+    );
   }, []);
 
   const distances = data?.distances || [];

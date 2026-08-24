@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function validDistance(distance) {
+      return distance in ['6 km', '14 km', '47 km'];
+    }
+
+    function validPublicRegistration(data) {
+      return data.keys().hasOnly([
+          'bib_number', 'name', 'club', 'nationality', 'distance',
+          'finish_time', 'finish_seconds', 'created_at'
+        ])
+        && data.bib_number is int
+        && data.bib_number >= 1
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.club is string && data.club.size() <= 120
+        && data.nationality is string && data.nationality.size() >= 2 && data.nationality.size() <= 80
+        && validDistance(data.distance)
+        && data.finish_time == null
+        && data.finish_seconds == null
+        && data.created_at == request.time;
+    }
+
+    function validPrivateRegistration(data) {
+      return data.keys().hasOnly([
+          'bib_number', 'name', 'birthdate', 'club', 'nationality', 'email',
+          'distance', 'medal', 'bus_transfer', 'finish_time', 'finish_seconds',
+          'paid', 'created_at'
+        ])
+        && validPublicRegistration({
+          'bib_number': data.bib_number,
+          'name': data.name,
+          'club': data.club,
+          'nationality': data.nationality,
+          'distance': data.distance,
+          'finish_time': data.finish_time,
+          'finish_seconds': data.finish_seconds,
+          'created_at': data.created_at
+        })
+        && data.birthdate is string && data.birthdate.size() >= 6 && data.birthdate.size() <= 10
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 254
+        && (data.medal == null || data.medal is string)
+        && (data.bus_transfer == null || data.bus_transfer is string)
+        && data.paid == false;
+    }
+
+    function isCurrentBib(data) {
+      return data.bib_number == get(/databases/$(database)/documents/metadata/counters).data.nextBib
+        && getAfter(/databases/$(database)/documents/metadata/counters).data.nextBib == data.bib_number + 1;
+    }
+
+    match /registrations_public/{bib} {
+      allow read: if true;
+      allow create: if validPublicRegistration(request.resource.data)
+        && bib == string(request.resource.data.bib_number)
+        && isCurrentBib(request.resource.data)
+        && getAfter(/databases/$(database)/documents/registrations_private/$(bib)).data.email is string
+        && getAfter(/databases/$(database)/documents/registrations_private/$(bib)).data.name == request.resource.data.name
+        && getAfter(/databases/$(database)/documents/registrations_private/$(bib)).data.club == request.resource.data.club
+        && getAfter(/databases/$(database)/documents/registrations_private/$(bib)).data.nationality == request.resource.data.nationality
+        && getAfter(/databases/$(database)/documents/registrations_private/$(bib)).data.distance == request.resource.data.distance;
+      allow update, delete: if isAdmin();
+    }
+
+    match /registrations_private/{bib} {
+      allow read, update, delete: if isAdmin();
+      allow create: if validPrivateRegistration(request.resource.data)
+        && bib == string(request.resource.data.bib_number)
+        && isCurrentBib(request.resource.data)
+        && getAfter(/databases/$(database)/documents/registrations_public/$(bib)).data.name == request.resource.data.name
+        && getAfter(/databases/$(database)/documents/registrations_public/$(bib)).data.club == request.resource.data.club
+        && getAfter(/databases/$(database)/documents/registrations_public/$(bib)).data.nationality == request.resource.data.nationality
+        && getAfter(/databases/$(database)/documents/registrations_public/$(bib)).data.distance == request.resource.data.distance;
+    }
+
+    match /metadata/counters {
+      allow get: if true;
+      allow list: if false;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        request.resource.data.keys().hasOnly(['nextBib'])
+        && request.resource.data.nextBib is int
+        && request.resource.data.nextBib == resource.data.nextBib + 1
+        && getAfter(/databases/$(database)/documents/registrations_public/$(string(resource.data.nextBib))).data.bib_number == resource.data.nextBib
+        && getAfter(/databases/$(database)/documents/registrations_private/$(string(resource.data.nextBib))).data.bib_number == resource.data.nextBib
+      );
+    }
+
+    match /timing/{distance} {
+      allow read, write: if isAdmin();
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

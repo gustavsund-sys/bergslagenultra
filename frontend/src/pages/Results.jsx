@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { PublicLayout } from "@/components/PublicLayout";
-import { api } from "@/lib/api";
+import { publicData, subscribePublicRows } from "@/lib/api";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Trophy, Medal, Download, Printer } from "lucide-react";
 
@@ -18,7 +18,10 @@ export default function Results() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    api.get("/results").then((r) => setData(r.data)).catch(() => setData({ distances: [], groups: {} }));
+    return subscribePublicRows(
+      (rows) => setData(publicData.groupResults(rows)),
+      () => setData({ distances: [], groups: {} }),
+    );
   }, []);
 
   const distances = data?.distances || [];

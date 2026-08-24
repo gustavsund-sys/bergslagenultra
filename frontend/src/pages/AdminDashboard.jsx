@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { api, formatApiErrorDetail, LOGO_URL } from "@/lib/api";
+import { api, formatApiErrorDetail, LOGO_URL, subscribeAdminRows } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  useEffect(() => { loadRegs(); }, [loadRegs]);
+  useEffect(() => subscribeAdminRows(setRegs), []);
 
   const doLogout = async () => {
     await logout();
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
             <Link to="/admin/startnummer" data-testid="nav-startnummer" title="Startnummer" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
               <Tag size={15} /> <span className="hidden sm:inline">Startnummer</span>
             </Link>
-            <a href="/live" target="_blank" rel="noreferrer" data-testid="nav-live" title="Livetavla" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
+            <a href="#/live" target="_blank" rel="noreferrer" data-testid="nav-live" title="Livetavla" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
               <Monitor size={15} /> <span className="hidden sm:inline">Livetavla</span>
             </a>
             <button onClick={doLogout} data-testid="admin-logout" title="Logga ut" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
