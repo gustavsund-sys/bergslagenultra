@@ -295,7 +295,7 @@ export default function LiveTiming() {
         </div>
 
         <div className="mt-4 rounded-md border border-border bg-white p-4 text-sm text-muted-foreground">
-          <span className="font-bold text-brand-forest">Så funkar det:</span> Starta distansen. Klicka på en löpares nummer <span className="font-bold text-brand">en gång</span> för att fånga tiden, och <span className="font-bold text-brand">en gång till</span> för att bekräfta målgången (dubbelklicka snabbt). Klickade du fel? Tryck på × uppe i hörnet av knappen för att ångra. Klockan kan stoppas manuellt och stoppas automatiskt när alla på distansen är färdigbehandlade (i mål eller DNF). Tider går att ändra i efterhand under "Deltagare & tider". <span className="font-bold text-brand-forest">Start- och stopptid sparas med Firestores servertid</span> – andra funktionärer ser samma klocka och målgångar i realtid.
+          <span className="font-bold text-brand-forest">Så funkar det:</span> Starta distansen. Klicka på en löpares nummer <span className="font-bold text-brand">en gång</span> för att fånga tiden, och <span className="font-bold text-brand">en gång till</span> för att bekräfta målgången (dubbelklicka snabbt). Klickade du fel? Tryck på × uppe i hörnet av knappen för att ångra. Klockan kan stoppas manuellt och stoppas automatiskt när alla på distansen är färdigbehandlade (i mål eller DNF). Tider går att ändra i efterhand under "Deltagare & tider". <span className="font-bold text-brand-forest">Start- och stopptid sparas med servertid</span> – andra funktionärer ser samma klocka och målgångar i realtid.
         </div>
 
         <div className="mt-8 space-y-10">
