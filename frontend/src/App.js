@@ -12,6 +12,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import BibLabels from "@/pages/BibLabels";
 import LiveBoard from "@/pages/LiveBoard";
 import LiveTiming from "@/pages/LiveTiming";
+import EventSettings from "@/pages/EventSettings";
 
 function App() {
   return (
@@ -46,6 +47,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LiveTiming />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/installningar"
+              element={
+                <ProtectedRoute>
+                  <EventSettings />
                 </ProtectedRoute>
               }
             />

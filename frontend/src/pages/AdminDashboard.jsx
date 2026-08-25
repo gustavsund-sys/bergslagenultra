@@ -5,7 +5,7 @@ import { api, formatApiErrorDetail, LOGO_URL, subscribeAdminRows } from "@/lib/a
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { LogOut, Search, Timer, CheckCircle2, Trash2, Clock, Tag, Monitor, Pencil, Check, X, Bus } from "lucide-react";
+import { LogOut, Search, Timer, CheckCircle2, Trash2, Clock, Tag, Monitor, Pencil, Check, X, Bus, SlidersHorizontal } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -127,6 +127,9 @@ export default function AdminDashboard() {
             </Link>
             <Link to="/admin/startnummer" data-testid="nav-startnummer" title="Startnummer" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
               <Tag size={15} /> <span className="hidden sm:inline">Startnummer</span>
+            </Link>
+            <Link to="/admin/installningar" data-testid="nav-event-settings" title="Anmälningsinställningar" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
+              <SlidersHorizontal size={15} /> <span className="hidden sm:inline">Anmälan</span>
             </Link>
             <a href="#/live" target="_blank" rel="noreferrer" data-testid="nav-live" title="Livetavla" className="inline-flex items-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-white/10 sm:px-4">
               <Monitor size={15} /> <span className="hidden sm:inline">Livetavla</span>

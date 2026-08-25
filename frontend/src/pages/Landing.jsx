@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { PublicLayout } from "@/components/PublicLayout";
 import { ArrowRight, Mountain, Heart, Route, Medal, Bus } from "lucide-react";
+import { RegistrationCountdown } from "@/components/RegistrationCountdown";
+import { useRegistrationStatus } from "@/hooks/useRegistrationStatus";
 
 const HERO =
   "https://images.unsplash.com/photo-1644293230796-739c37cf4ffd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHw0fHx0cmFpbCUyMHJ1bm5pbmclMjBmb3Jlc3R8ZW58MHx8fHwxNzg1OTE4MDQ4fDA&ixlib=rb-4.1.0&q=85";
@@ -20,6 +22,7 @@ const distances = [
 ];
 
 export default function Landing() {
+  const { status } = useRegistrationStatus();
   return (
     <PublicLayout>
       {/* HERO */}
@@ -38,13 +41,18 @@ export default function Landing() {
               Traillöpning genom Bergslagens djupa skogar mellan Digerberget och Ånnaboda.
               Du behöver inte åka till fjällen för att få höjdmetrarna.
             </p>
+            {status && status.phase !== "open" && (
+              <div className="mt-7 max-w-xl">
+                <RegistrationCountdown status={status} compact dark />
+              </div>
+            )}
             <div className="mt-9 flex flex-wrap gap-4">
               <Link
                 to="/anmalan"
                 data-testid="hero-register-btn"
                 className="group inline-flex items-center gap-2 rounded-sm bg-brand px-7 py-4 text-sm font-bold uppercase tracking-wide text-white shadow-[4px_4px_0px_rgba(26,36,33,0.6)] transition-all hover:-translate-y-0.5 hover:bg-brand-hover"
               >
-                Anmäl dig nu
+                {!status || status.phase === "open" ? "Anmäl dig nu" : "Information om anmälan"}
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <Link

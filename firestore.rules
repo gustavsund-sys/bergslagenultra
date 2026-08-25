@@ -14,6 +14,20 @@ service cloud.firestore {
       return distance in ['6 km', '14 km', '47 km'];
     }
 
+    function registrationIsOpen() {
+      return !exists(/databases/$(database)/documents/settings/event) || (
+        get(/databases/$(database)/documents/settings/event).data.registration_enabled == true
+        && (
+          get(/databases/$(database)/documents/settings/event).data.registration_open_at == null
+          || request.time >= get(/databases/$(database)/documents/settings/event).data.registration_open_at
+        )
+        && (
+          get(/databases/$(database)/documents/settings/event).data.registration_close_at == null
+          || request.time <= get(/databases/$(database)/documents/settings/event).data.registration_close_at
+        )
+      );
+    }
+
     function validPublicRegistration(data) {
       return data.keys().hasOnly([
           'bib_number', 'name', 'club', 'nationality', 'distance',
@@ -60,7 +74,8 @@ service cloud.firestore {
 
     match /registrations_public/{bib} {
       allow read: if true;
-      allow create: if validPublicRegistration(request.resource.data)
+      allow create: if registrationIsOpen()
+        && validPublicRegistration(request.resource.data)
         && bib == string(request.resource.data.bib_number)
         && isCurrentBib(request.resource.data)
         && getAfter(/databases/$(database)/documents/registrations_private/$(bib)).data.email is string
@@ -73,7 +88,8 @@ service cloud.firestore {
 
     match /registrations_private/{bib} {
       allow read, update, delete: if isAdmin();
-      allow create: if validPrivateRegistration(request.resource.data)
+      allow create: if registrationIsOpen()
+        && validPrivateRegistration(request.resource.data)
         && bib == string(request.resource.data.bib_number)
         && isCurrentBib(request.resource.data)
         && getAfter(/databases/$(database)/documents/registrations_public/$(bib)).data.name == request.resource.data.name
@@ -102,6 +118,11 @@ service cloud.firestore {
     match /timing_audit/{entry} {
       allow read, create: if isAdmin();
       allow update, delete: if false;
+    }
+
+    match /settings/event {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /admins/{uid} {
