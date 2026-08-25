@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { api, formatApiErrorDetail, LOGO_URL, subscribeAdminRows } from "@/lib/api";
+import { api, formatApiErrorDetail, LOGO_URL, subscribeAdminRows, syncResultSummaries } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ export default function AdminDashboard() {
   const [filter, setFilter] = useState("all");
   const [editBib, setEditBib] = useState(null);
   const [editTime, setEditTime] = useState("");
+  const resultSummariesInitializedRef = useRef(false);
 
   const loadRegs = useCallback(async () => {
     try {
@@ -29,7 +30,15 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  useEffect(() => subscribeAdminRows(setRegs), []);
+  useEffect(() => subscribeAdminRows((rows) => {
+    setRegs(rows);
+    if (!resultSummariesInitializedRef.current) {
+      resultSummariesInitializedRef.current = true;
+      syncResultSummaries(rows).catch(() => {
+        resultSummariesInitializedRef.current = false;
+      });
+    }
+  }), []);
 
   const doLogout = async () => {
     await logout();

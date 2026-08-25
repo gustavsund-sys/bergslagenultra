@@ -9,6 +9,30 @@ export const DISTANCES = ["6 km", "14 km", "47 km"];
 
 const privateCollection = collection(db, "registrations_private");
 const publicCollection = collection(db, "registrations_public");
+const resultsCollection = collection(db, "public_results");
+
+const resultDocumentId = (distance) => distance.replace(" ", "-");
+
+function publicResultRow(row, overrides = {}) {
+  const result = { ...row, ...overrides };
+  return {
+    bib_number: Number(result.bib_number),
+    name: result.name || "",
+    club: result.club || "",
+    nationality: result.nationality || "",
+    distance: result.distance,
+    finish_time: result.finish_time || null,
+    finish_seconds: result.finish_seconds ?? null,
+    race_status: result.race_status || null,
+  };
+}
+
+function updateResultRows(rows, row) {
+  const withoutRunner = (Array.isArray(rows) ? rows : [])
+    .filter((item) => Number(item.bib_number) !== Number(row.bib_number));
+  if (row.finish_seconds != null || row.race_status === "DNF") withoutRunner.push(row);
+  return sortByBib(withoutRunner);
+}
 
 export const DEFAULT_EVENT_SETTINGS = {
   registration_enabled: true,
@@ -76,6 +100,45 @@ function groupResults(rows) {
 async function readRows(ref = publicCollection) {
   const snapshot = await getDocs(query(ref, orderBy("bib_number", "asc")));
   return snapshot.docs.map(fromSnapshot);
+}
+
+async function readResultRows() {
+  try {
+    const snapshot = await getDocs(resultsCollection);
+    const summaries = snapshot.docs.map(fromSnapshot);
+    if (DISTANCES.every((distance) => summaries.some((item) => item.distance === distance))) {
+      return summaries.flatMap((item) => Array.isArray(item.rows) ? item.rows : []);
+    }
+  } catch {
+    // The old rules may still be active during deployment; keep results available.
+  }
+  // Safe migration fallback until an administrator has opened the timing/admin view.
+  return readRows();
+}
+
+export async function syncResultSummaries(rows) {
+  const batch = writeBatch(db);
+  DISTANCES.forEach((distance) => {
+    const resultRows = rows
+      .filter((row) => row.distance === distance)
+      .map((row) => publicResultRow(row))
+      .filter((row) => row.finish_seconds != null || row.race_status === "DNF");
+    batch.set(doc(resultsCollection, resultDocumentId(distance)), {
+      distance,
+      rows: sortByBib(resultRows),
+      updated_at: serverTimestamp(),
+    });
+  });
+  await batch.commit();
+}
+
+export function subscribeResultRows(callback, onError = () => {}) {
+  return onSnapshot(resultsCollection, (snapshot) => {
+    callback(snapshot.docs.flatMap((item) => {
+      const data = fromSnapshot(item);
+      return Array.isArray(data.rows) ? data.rows : [];
+    }));
+  }, onError);
 }
 
 export function subscribePublicRows(callback, onError = () => {}) {
@@ -181,6 +244,8 @@ async function setFinish(bib, value, preventOverwrite = false) {
     const snapshot = await transaction.get(privateRef);
     if (!snapshot.exists()) throw appError("Deltagarnummer hittades inte.");
     const old = snapshot.data();
+    const summaryRef = doc(resultsCollection, resultDocumentId(old.distance));
+    const summarySnapshot = await transaction.get(summaryRef);
     if (preventOverwrite && old.finish_time) {
       throw appError(`Nr ${bib} har redan sluttiden ${old.finish_time}.`);
     }
@@ -192,6 +257,11 @@ async function setFinish(bib, value, preventOverwrite = false) {
     };
     transaction.update(privateRef, update);
     transaction.update(publicRef, update);
+    transaction.set(summaryRef, {
+      distance: old.distance,
+      rows: updateResultRows(summarySnapshot.data()?.rows, publicResultRow(old, update)),
+      updated_at: serverTimestamp(),
+    });
     transaction.set(auditRef, {
       bib_number: Number(bib),
       distance: old.distance,
@@ -224,9 +294,16 @@ async function clearFinish(bib) {
     const snapshot = await transaction.get(privateRef);
     if (!snapshot.exists()) throw appError("Deltagarnummer hittades inte.");
     const old = snapshot.data();
+    const summaryRef = doc(resultsCollection, resultDocumentId(old.distance));
+    const summarySnapshot = await transaction.get(summaryRef);
     const update = { finish_time: null, finish_seconds: null, finish_updated_at: serverTimestamp() };
     transaction.update(privateRef, update);
     transaction.update(publicRef, update);
+    transaction.set(summaryRef, {
+      distance: old.distance,
+      rows: updateResultRows(summarySnapshot.data()?.rows, publicResultRow(old, update)),
+      updated_at: serverTimestamp(),
+    });
     transaction.set(auditRef, {
       bib_number: Number(bib),
       distance: old.distance,
@@ -250,6 +327,8 @@ async function setRaceStatus(bib, status) {
     const snapshot = await transaction.get(privateRef);
     if (!snapshot.exists()) throw appError("Deltagarnummer hittades inte.");
     const old = snapshot.data();
+    const summaryRef = doc(resultsCollection, resultDocumentId(old.distance));
+    const summarySnapshot = await transaction.get(summaryRef);
     const update = {
       race_status: status,
       finish_time: status ? null : old.finish_time || null,
@@ -258,6 +337,11 @@ async function setRaceStatus(bib, status) {
     };
     transaction.update(privateRef, update);
     transaction.update(publicRef, update);
+    transaction.set(summaryRef, {
+      distance: old.distance,
+      rows: updateResultRows(summarySnapshot.data()?.rows, publicResultRow(old, update)),
+      updated_at: serverTimestamp(),
+    });
     transaction.set(auditRef, {
       bib_number: Number(bib),
       distance: old.distance,
@@ -304,6 +388,10 @@ async function resetTiming(distance = null) {
     doc(db, "timing", item.replace(" ", "-")),
     { distance: item, start_time: null, stop_time: null },
   ]));
+  (distance ? [distance] : DISTANCES).forEach((item) => operations.push([
+    doc(resultsCollection, resultDocumentId(item)),
+    { distance: item, rows: [], updated_at: serverTimestamp() },
+  ]));
   for (let offset = 0; offset < operations.length; offset += 450) {
     const batch = writeBatch(db);
     operations.slice(offset, offset + 450).forEach(([ref, update]) => batch.set(ref, update, { merge: true }));
@@ -313,7 +401,7 @@ async function resetTiming(distance = null) {
 
 async function request(method, path, body) {
   if (method === "get" && path === "/startlist") return { data: groupStartList(await readRows()) };
-  if (method === "get" && path === "/results") return { data: groupResults(await readRows()) };
+  if (method === "get" && path === "/results") return { data: groupResults(await readResultRows()) };
   if (method === "get" && path === "/admin/registrations") return { data: await readRows(privateCollection) };
   if (method === "get" && path.startsWith("/admin/lookup/")) {
     const snapshot = await getDoc(doc(db, "registrations_private", path.split("/").pop()));
@@ -374,10 +462,23 @@ async function request(method, path, body) {
   }
   if (method === "delete" && path.startsWith("/admin/registrations/")) {
     const bib = path.split("/").pop();
-    const batch = writeBatch(db);
-    batch.delete(doc(db, "registrations_private", bib));
-    batch.delete(doc(db, "registrations_public", bib));
-    await batch.commit();
+    await runTransaction(db, async (transaction) => {
+      const privateRef = doc(db, "registrations_private", bib);
+      const snapshot = await transaction.get(privateRef);
+      if (!snapshot.exists()) throw appError("Deltagarnummer hittades inte.");
+      const old = snapshot.data();
+      const summaryRef = doc(resultsCollection, resultDocumentId(old.distance));
+      const summarySnapshot = await transaction.get(summaryRef);
+      transaction.delete(privateRef);
+      transaction.delete(doc(db, "registrations_public", bib));
+      transaction.set(summaryRef, {
+        distance: old.distance,
+        rows: updateResultRows(summarySnapshot.data()?.rows, publicResultRow(old, {
+          finish_time: null, finish_seconds: null, race_status: null,
+        })),
+        updated_at: serverTimestamp(),
+      });
+    });
     return { data: { message: "Anmälan borttagen" } };
   }
   throw appError(`Okänd dataoperation: ${method.toUpperCase()} ${path}`);

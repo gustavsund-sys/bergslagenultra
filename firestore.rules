@@ -120,6 +120,11 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /public_results/{distance} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /settings/event {
       allow read: if true;
       allow write: if isAdmin();
