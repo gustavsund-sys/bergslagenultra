@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { api, formatApiErrorDetail, LOGO_URL, subscribeAdminRows, subscribeTiming } from "@/lib/api";
+import { api, formatApiErrorDetail, LOGO_URL, subscribeAdminRows, subscribeTiming, syncResultSummaries } from "@/lib/api";
 import { toast } from "sonner";
 import { LogOut, ArrowLeft, Play, Square, RotateCcw, Flag, X, AlertTriangle, UserX } from "lucide-react";
 import {
@@ -38,10 +38,19 @@ export default function LiveTiming() {
   const armedRef = useRef({});
   const savingRef = useRef({});
   const stoppingRef = useRef({});
+  const resultSummariesInitializedRef = useRef(false);
 
   useEffect(() => {
     const unsubscribeTiming = subscribeTiming(setTiming);
-    const unsubscribeRunners = subscribeAdminRows(setRunners);
+    const unsubscribeRunners = subscribeAdminRows((rows) => {
+      setRunners(rows);
+      if (!resultSummariesInitializedRef.current) {
+        resultSummariesInitializedRef.current = true;
+        syncResultSummaries(rows).catch(() => {
+          resultSummariesInitializedRef.current = false;
+        });
+      }
+    });
     return () => {
       unsubscribeTiming();
       unsubscribeRunners();

@@ -14,6 +14,7 @@ Personuppgifter och publik tävlingsdata hålls åtskilda:
 
 - `registrations_private`: fullständiga anmälningar; endast funktionärer
 - `registrations_public`: namn, klubb, distans, startnummer och resultat
+- `public_results`: kompakta publika resultatsammanställningar per distans
 - `timing`: servergenererade starttider per distans
 - `admins`: funktionärernas Firebase Auth-UID:n
 - `metadata/counters`: atomär räknare för nästa startnummer

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LOGO_URL, publicData, subscribePublicRows } from "@/lib/api";
+import { LOGO_URL, publicData, subscribeResultRows } from "@/lib/api";
 import { Trophy, Medal, Radio } from "lucide-react";
 
 const rankColor = (rank) => {
@@ -15,7 +15,7 @@ export default function LiveBoard() {
   const [updated, setUpdated] = useState(null);
 
   useEffect(() => {
-    return subscribePublicRows((rows) => {
+    return subscribeResultRows((rows) => {
       setData(publicData.groupResults(rows));
       setUpdated(new Date());
     });
