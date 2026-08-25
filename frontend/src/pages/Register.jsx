@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { CheckCircle2, Medal, Bus, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { RegistrationCountdown } from "@/components/RegistrationCountdown";
+import { useRegistrationStatus } from "@/hooks/useRegistrationStatus";
 
 const DISTANCES = [
   { v: "6 km", tag: "Kortdistans", note: "Ingen avgift" },
@@ -23,6 +25,7 @@ const BUS_OPTS = [
 ];
 
 export default function Register() {
+  const { status } = useRegistrationStatus();
   const [form, setForm] = useState({
     name: "",
     birthdate: "",
@@ -41,6 +44,10 @@ export default function Register() {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (status?.phase !== "open") {
+      toast.error("Anmälan är inte öppen.");
+      return;
+    }
     if (!form.name || !form.birthdate || !form.email || !form.distance || !form.nationality) {
       toast.error("Fyll i alla obligatoriska fält.");
       return;
@@ -104,6 +111,27 @@ export default function Register() {
                 Anmäl fler
               </button>
             </div>
+          </div>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  if (!status) {
+    return <PublicLayout><div className="mx-auto max-w-2xl px-5 py-24 text-center text-muted-foreground">Kontrollerar anmälningsstatus…</div></PublicLayout>;
+  }
+
+  if (status.phase !== "open") {
+    return (
+      <PublicLayout>
+        <div className="mx-auto max-w-2xl px-5 py-24 sm:px-8">
+          <RegistrationCountdown status={status} />
+          <div className="mt-8 text-center">
+            <h1 className="font-display text-3xl font-black uppercase tracking-tight text-brand-forest">
+              {status.phase === "closed" ? "Anmälan är stängd" : "Anmälan har inte öppnat ännu"}
+            </h1>
+            <p className="mt-3 text-muted-foreground">Välkommen tillbaka när anmälan har öppnat.</p>
+            <Link to="/" className="mt-7 inline-flex rounded-sm bg-brand px-6 py-3 text-sm font-bold uppercase tracking-wide text-white hover:bg-brand-hover">Till startsidan</Link>
           </div>
         </div>
       </PublicLayout>

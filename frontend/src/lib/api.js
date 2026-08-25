@@ -1,6 +1,6 @@
 import {
   collection, doc, getDoc, getDocs, onSnapshot, orderBy, query,
-  runTransaction, serverTimestamp, setDoc, updateDoc, where, writeBatch,
+  runTransaction, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -9,6 +9,13 @@ export const DISTANCES = ["6 km", "14 km", "47 km"];
 
 const privateCollection = collection(db, "registrations_private");
 const publicCollection = collection(db, "registrations_public");
+
+export const DEFAULT_EVENT_SETTINGS = {
+  registration_enabled: true,
+  registration_open_at: null,
+  registration_close_at: null,
+  countdown_days: 7,
+};
 
 function appError(message) {
   const error = new Error(message);
@@ -95,6 +102,25 @@ export function subscribeTiming(callback, onError = () => {}) {
     });
     callback(state);
   }, onError);
+}
+
+export function subscribeEventSettings(callback, onError = () => {}) {
+  return onSnapshot(doc(db, "settings", "event"), (snapshot) => {
+    callback(snapshot.exists() ? { ...DEFAULT_EVENT_SETTINGS, ...fromSnapshot(snapshot) } : DEFAULT_EVENT_SETTINGS);
+  }, onError);
+}
+
+export async function saveEventSettings(settings) {
+  const toTimestamp = (value) => value ? Timestamp.fromDate(new Date(value)) : null;
+  const payload = {
+    registration_enabled: Boolean(settings.registration_enabled),
+    registration_open_at: toTimestamp(settings.registration_open_at),
+    registration_close_at: toTimestamp(settings.registration_close_at),
+    countdown_days: Math.max(0, Math.min(365, Number(settings.countdown_days) || 0)),
+    updated_at: serverTimestamp(),
+  };
+  await setDoc(doc(db, "settings", "event"), payload);
+  return { ...settings, countdown_days: payload.countdown_days, updated_at: new Date().toISOString() };
 }
 
 function parseTime(value) {
